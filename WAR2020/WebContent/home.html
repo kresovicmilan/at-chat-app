@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Chat application</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+
+<script>
+let socket;
+let host = "ws://localhost:8080/WAR2020/ws";
+let username = '';
+let sessionId = '';
+
+window.onload = function() {
+    username = sessionStorage.getItem('username');
+}
+
+$(document).ready(function() {
+	$("#btnSend").click(function() {
+		const msgText = $("#msgText").val();
+		if (msgText === "" || msgText === undefined) {
+			alert('Message cannot be empty');
+			return;
+		}
+
+		$.ajax({
+			url: "rest/chat/messages/all",
+			type: "POST",
+			data: JSON.stringify({"senderUsername":username, "recieverUsername": "all", "messageContent":msgText}),
+			contentType: "application/json",
+			success: function(data) {
+                alert("Message sent");
+                console.log("Message sent");
+                return;
+            },
+            error: function(err) {
+                alert("Message is not sent");
+                return;
+            }
+		});
+
+		$('#msgText').val('');
+		/*$.ajax({
+			url: "rest/chat/post/" + msgText,
+			type: "POST",
+			data: {},
+			contentType: "application/json",
+			dataType: "json",
+			complete: function(data) {
+				alert("Message sent to all active users");
+			}	
+		});*/
+		
+	});
+
+	$("#btnSendOne").click(function() {
+		console.log("Ispisi")
+		const msgText = $("#msgText").val();
+		if (msgText === "" || msgText === undefined) {
+			alert("Message cannot be empty");
+			return;
+		}
+
+		var el = document.getElementById("registeredUsers");
+		var recieverUsername = el.options[el.selectedIndex].value;
+
+		$.ajax({
+			url: "rest/chat/messages/user",
+			type: "POST",
+			data: JSON.stringify({"senderUsername":username, "recieverUsername": recieverUsername, "messageContent":msgText}),
+			contentType: "application/json",
+			success: function(data) {
+                alert("Message sent");
+                console.log("Message sent");
+                return;
+            },
+            error: function(err) {
+                alert("Message is not sent");
+                return;
+            }
+		});
+
+		$('#registeredUsers').html('');
+		$('#msgText').val('');
+		$('#sendSpecificUser').css('display', 'none');
+	});
+
+	$("#btnLogout").click(function() {
+		$.ajax({
+			url: "rest/chat/users/logout/" + username,
+			type: "DELETE",
+			data: "",
+			complete: function(data) {
+				sessionStorage.setItem('username', "");
+                alert("User logged out");
+                window.location.href='./index.html';
+            }
+		});
+	});
+
+	$("#btnAllRegistered").click(function() {
+		$.ajax({
+			url: "rest/chat/users/registered",
+			type: "GET",
+			success: function(data) {
+				let registeredUsers = '--- Registered users ---\n';
+				for (usrname of data) {
+					registeredUsers += usrname + "\n";
+				}
+				alert(registeredUsers);
+            }
+		});
+	});
+
+	$("#btnAllLoggedIn").click(function() {
+		$.ajax({
+			url: "rest/chat/users/loggedIn",
+			type: "GET",
+			success: function(data) {
+				let loggedInUsers = '--- Logged in users ---\n';
+				for (usrname of data) {
+					loggedInUsers += usrname + "\n";
+				}
+				alert(loggedInUsers);
+            }
+		});
+	});
+
+	$("#btnChooseReciever").click(function() {
+		$('#registeredUsers').html('');
+		$('#sendSpecificUser').css('display', 'block');
+
+		$.ajax({
+			url: "rest/chat/users/registered",
+			type: "GET",
+			success: function(data) {
+				var select = document.getElementById('registeredUsers');
+				
+				for (usrname of data) {
+					var opt = document.createElement('option');
+					opt.value = usrname;
+				    opt.innerHTML = usrname;
+				    select.appendChild(opt);
+				}
+            }
+		});
+	});
+
+	$("#btnGetMessages").click(function() {
+		$('#recievedMessages').empty();
+		$.ajax({
+			url: "rest/chat/messages/" + username,
+			type: "GET",
+			success: function(data) {
+				var div = document.getElementById('recievedMessages');
+				var inner = ""
+				for (el of data) {
+					div.innerHTML += "<u>Sender:</u> " + "<b>" + el.senderUsername + "</b>" + "<br/>";
+					div.innerHTML += "<b>" +el.messageContent + "</b>" + "<br/><hr>";
+				}
+            }
+		});
+	});
+	
+	try {
+		socket = new WebSocket(host);
+	
+		console.log('connect: Socket Status: ' + socket.readyState);
+		
+		socket.onopen = function() {
+			console.log('onopen: Socket Status: ' + socket.readyState + ' (open)');
+		}
+
+		console.log(socket);
+		
+		socket.onmessage = function(msg) {
+			console.log('onmessage: Received: ' + msg.data);
+		}
+		
+		socket.onclose = function() {
+			sessionStorage.setItem('username', '');
+			socket = null;
+		}
+		
+	} catch(exception) {
+		console.log('Error: ' + exception);
+	}
+});
+</script>
+
+</head>
+<body>
+	<center>
+		<h2>ChatApp</h2>
+		<table>
+			<tr>
+				<td>
+					<button id="btnAllRegistered">Get all registered users</button>
+				</td>
+				<td>
+					<button id="btnAllLoggedIn">Get all logged in users</button>
+				</td>
+				<td>
+					<button id="btnLogout">Logout</button>
+				</td>
+			</tr>
+		</table>
+		<br/>
+		<table>
+			<tr>
+				<td valign="top"><label>Message: </label></td>
+				<td><textarea id="msgText" rows="4" cols="50" placeholder="message"></textarea></td>
+				<td valign="top">
+					<div id="sendSpecificUser" style="display: none">
+				 		<select id="registeredUsers">
+						</select>
+						<br/>
+						<button id="btnSendOne">Send</button>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td align="right" colspan="3"><button id="btnSend">Send to all users</button></td>
+			</tr>
+			<tr>
+				<td align="right" colspan="3"><button id="btnChooseReciever">Choose reciever user</button></td>
+			</tr>
+		</table>
+		<br/>
+		<table>
+			<tr>
+				<td valign="top">
+					<label>Inbox: </label>
+					<br/>
+					<button id="btnGetMessages">Get inbox</button>
+				</td>
+				<td><div id="recievedMessages" style="height: 200px; width: 500px; border-style: solid; border-width: 1px; overflow: auto;"></div></td>
+			</tr>
+		</table>
+	</center>
+</body>
+</html>
