@@ -1,6 +1,9 @@
 package beans;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -10,6 +13,7 @@ import java.util.Set;
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
+import javax.websocket.Session;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -20,6 +24,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+
+import com.google.gson.Gson;
 
 import DTO.MessageDTO;
 import models.Message;
@@ -87,18 +93,24 @@ public class ChatBean implements ChatRemote {
     }
 	
 	@DELETE
-    @Path("/users/logout/{user}")
+    @Path("/users/loggedIn/{user}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public Response logout(@PathParam("user") String username) {
 		System.out.println("---- LOGOUT ----");
 		System.out.println("[INFO] Username: " + username);
-		for (User userSpecific: loggedInUsers.values()) {
-			if (userSpecific.getUsername().equals(username)) {
-				this.loggedInUsers.remove(userSpecific.getUsername());
-				System.out.println("[LOGOUT - SUCCESSFUL] User logged out");
-				return Response.status(200).entity("User is logged out").build();
+		List<Session> activeSessions = new ArrayList<>(ws.getUserSessions().get(username));
+		if (activeSessions.size() == 1) {
+			for (User userSpecific: loggedInUsers.values()) {
+				if (userSpecific.getUsername().equals(username)) {
+					this.loggedInUsers.remove(userSpecific.getUsername());
+					System.out.println("[LOGOUT - SUCCESSFUL] User logged out");
+					return Response.status(200).entity("User is logged out").build();
+				}
 			}
+		} else {
+			System.out.println("[LOGOUT - SUCCESSFUL] User logged out");
+			return Response.status(200).entity("User is logged out").build();
 		}
 		
 		System.out.println("[LOGIN - ERROR] User either doesn't exist or is already logged out");
@@ -124,6 +136,7 @@ public class ChatBean implements ChatRemote {
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<String> getAllLoggedIn() {
 		System.out.println("---- ALL LOGGED IN USERS ----");
+		List<String> activeUsers = new ArrayList<>(ws.getUserSessions().keySet());
 		List<String> usernames = new ArrayList();
 		for(User u: loggedInUsers.values()) {
 			System.out.println(u.getUsername());
@@ -141,6 +154,7 @@ public class ChatBean implements ChatRemote {
 		System.out.println("---- SEND MESSAGE TO USER ----");
 		System.out.println("[INFO] Sender: " + messageDTO.getSenderUsername());
 		System.out.println("[INFO] Reciever: " + messageDTO.getRecieverUsername());
+		System.out.println("[INFO] Message title: " + messageDTO.getMessageTitle());
 		System.out.println("[INFO] Message content: " + messageDTO.getMessageContent());
 		Message message = new Message();
 		
@@ -160,10 +174,19 @@ public class ChatBean implements ChatRemote {
 		
 		message.setSender(sender);
 		message.setReciever(reciever);
+		Date dateSent = new Date();
+		message.setDateSent(dateSent);
+		message.setMessageTitle(messageDTO.getMessageTitle());
 		message.setMessageContent(messageDTO.getMessageContent());
 		
 		sender.getSentMessages().add(message);
 		reciever.getRecievedMessages().add(message);
+		
+		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+		messageDTO.setDateSent(dateFormat.format(dateSent));
+		
+		String jsonMessageDTO = new Gson().toJson(messageDTO);
+		ws.echoTextMessage(jsonMessageDTO);
 		
 		System.out.println("[INFO] Message has been sent");
 		return Response.status(200).entity("Message has been sent").build();
@@ -176,6 +199,7 @@ public class ChatBean implements ChatRemote {
     public Response sendMessageToAll(MessageDTO messageDTO)  {
 		System.out.println("---- SEND MESSAGE TO ALL USERS ----");
 		System.out.println("[INFO] Sender: " + messageDTO.getSenderUsername());
+		System.out.println("[INFO] Message title: " + messageDTO.getMessageTitle());
 		System.out.println("[INFO] Message content: " + messageDTO.getMessageContent());
 		
 		User sender = this.users.get(messageDTO.getSenderUsername());
@@ -184,13 +208,25 @@ public class ChatBean implements ChatRemote {
 			return Response.status(400).entity("Sender doesn't exist").build();
 		}
 		
+		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+		String jsonMessageDTO = "";
+		
 		for(User u: users.values()) {
 			Message message = new Message();
 			message.setMessageContent(messageDTO.getMessageContent());
 			message.setSender(sender);
 			message.setReciever(u);
 			message.setToAll(true);
+			message.setMessageTitle(messageDTO.getMessageTitle());
+			Date dateSent = new Date();
+			message.setDateSent(dateSent);
 			u.getRecievedMessages().add(message);
+
+			messageDTO.setDateSent(dateFormat.format(dateSent));
+			messageDTO.setRecieverUsername(u.getUsername());
+			jsonMessageDTO = new Gson().toJson(messageDTO);
+			ws.echoTextMessage(jsonMessageDTO);
+			
 			System.out.println("[INFO] Sent to: " + u.getUsername());
 		}
 		
@@ -212,13 +248,16 @@ public class ChatBean implements ChatRemote {
 			return messagesDTO;
 		}
 		
+		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 		System.out.println("---- Inbox ----");
 		for(User u: users.values()) {
 			if (u.getUsername().equals(username)) {
 				for (Message m: u.getRecievedMessages()) {
-					MessageDTO messageDTO = new MessageDTO(m.getSender().getUsername(), username, m.getMessageContent());
+					MessageDTO messageDTO = new MessageDTO(m.getSender().getUsername(), username, m.getMessageContent(), m.getMessageTitle(), dateFormat.format(m.getDateSent()));
 					messagesDTO.add(messageDTO);
 					System.out.println("[INFO] Sender: " + messageDTO.getSenderUsername());
+					System.out.println("[INFO] Date: " + dateFormat.format(m.getDateSent()));
+					System.out.println("[INFO] Content: " + messageDTO.getMessageTitle());
 					System.out.println("[INFO] Content: " + messageDTO.getMessageContent());
 					System.out.println("-----------------------------------");
 				}

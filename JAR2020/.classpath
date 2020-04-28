@@ -13,5 +13,6 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/WAR2020"/>
+	<classpathentry exported="true" kind="lib" path="D:/Desktop/Fakultet/4.godina/8.semestar/Agentske tehnologije/gson-2.8.2.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

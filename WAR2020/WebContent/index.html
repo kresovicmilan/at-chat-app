@@ -8,15 +8,19 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 
+<link href="index.css" rel="stylesheet" type="text/css">
+
 <script>
 
 $(document).ready(function() {
 	$("#btnLogin").click(function() {
-		const username = $('#username').val();
-		const password = $("#password").val();
+		const username = $('#inputUsername').val();
+		const password = $("#inputPassword").val();
 		if (password === "" || password === undefined || username === "" || username === undefined) {
-			alert("Please input username and password");
-			return;
+			var div = document.getElementById('showMessage');
+			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Please input username and password</div>';
+			document.getElementById('inputUsername').value = '';
+			document.getElementById('inputPassword').value = '';
 		}
 		
 		$.ajax({
@@ -27,12 +31,13 @@ $(document).ready(function() {
 			success: function(data) {
                 sessionStorage.setItem('username', username);
                 window.location.href='./home.html';
-                console.log("User logged in");
                 return;
             },
             error: function(err) {
-                alert("Error: username or password is not correct");
-                return;
+                var div = document.getElementById('showMessage');
+				div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Incorrect username or password</div>';
+				document.getElementById('inputUsername').value = '';
+				document.getElementById('inputPassword').value = '';
             }	
 		});
 	});
@@ -42,26 +47,32 @@ $(document).ready(function() {
 
 </head>
 <body>
-	<center>
-		<h2>ChatApp</h2>
-		<br/>
-		<table>
-			<tr>
-				<td><label>Username: </label></td>
-				<td><input id="username" type="text" placeholder="username"/></td>
-			</tr>
-			<tr>
-				<td><label>Password: </label></td>
-				<td><input id="password" type="password" placeholder="password"></td>
-			</tr>
-			<tr>
-				<td align="right" colspan="2"><button id="btnLogin">Login</button></td>
-			</tr>
-			<tr>
-				<td align="right" colspan="2"><button onclick="window.location.href='./register.html'">Register</button></td>
-			</tr>
-		</table>
-	</center>
+<div class="container">
+    <div class="row">
+      <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+        <div class="card card-signin my-5">
+          <div class="card-body">
+            <h5 class="card-title text-center">Chat App - Sign in</h5>
+            <div id="showMessage"></div>
+            <div class="form-signin">
+              <div class="form-label-group">
+                <input type="username" id="inputUsername" class="form-control" placeholder="Username" required autofocus>
+                <label for="inputUsername">Username</label>
+              </div>
+
+              <div class="form-label-group">
+                <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+                <label for="inputPassword">Password</label>
+              </div>
+              <button id="btnLogin" class="btn btn-lg btn-primary btn-block text-uppercase">Sign in</button>
+              <hr class="my-4">
+              <button class="btn btn-lg btn-facebook btn-block text-uppercase" onclick="window.location.href='./register.html'"><i class="fab fa-facebook-f mr-2"></i> Register</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
 

@@ -1,6 +1,7 @@
 package models;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class Message implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -8,16 +9,20 @@ public class Message implements Serializable {
 	private User sender;
 	private User reciever;
 	private String messageContent;
+	private String messageTitle;
+	private Date dateSent;
 	private Boolean toAll = false;
 	
 	public Message() {
 		
 	}
 	
-	public Message(User sender, User reciever, String messageContent) {
+	public Message(User sender, User reciever, String messageContent, String messageTitle, Date dateSent) {
 		this.sender = sender;
 		this.reciever = reciever;
 		this.messageContent = messageContent;
+		this.messageTitle = messageTitle;
+		this.dateSent = dateSent;
 	}
 
 	public User getSender() {
@@ -50,6 +55,22 @@ public class Message implements Serializable {
 
 	public void setToAll(Boolean toAll) {
 		this.toAll = toAll;
+	}
+
+	public String getMessageTitle() {
+		return messageTitle;
+	}
+
+	public void setMessageTitle(String messageTitle) {
+		this.messageTitle = messageTitle;
+	}
+
+	public Date getDateSent() {
+		return dateSent;
+	}
+
+	public void setDateSent(Date dateSent) {
+		this.dateSent = dateSent;
 	}
 	
 }

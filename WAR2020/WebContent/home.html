@@ -2,11 +2,21 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-<title>Chat application</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+<title>Chat App</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/js/bootstrap-select.min.js"></script>
+
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css">
+
+<link rel="stylesheet" href="font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+<link href="home.css" rel="stylesheet" type="text/css">
 
 <script>
 let socket;
@@ -16,157 +26,207 @@ let sessionId = '';
 
 window.onload = function() {
     username = sessionStorage.getItem('username');
+    if (username !== "" && username !== undefined) {
+	    var pLoggedInAs = document.getElementById('loggedInAs');
+		pLoggedInAs.innerHTML = 'Logged in as <b>' + username + '</b>.';
+		$.ajax({
+		url: "rest/chat/users/registered",
+		type: "GET",
+		success: function(data) {
+			var selectUsers = document.getElementById('select-users');
+			var opt = document.createElement('option');
+			opt.value = "All users";
+			opt.innerHTML = "All users";
+			selectUsers.appendChild(opt);
+
+			for (usrname of data) {
+				var opt = document.createElement('option');
+				opt.value = usrname;
+			    opt.innerHTML = usrname;
+			    selectUsers.appendChild(opt);
+			}
+
+			$('.selectpicker').selectpicker('refresh');
+        }
+		});
+	} else {
+		window.location.href='./index.html';
+	}
 }
 
 $(document).ready(function() {
-	$("#btnSend").click(function() {
-		const msgText = $("#msgText").val();
-		if (msgText === "" || msgText === undefined) {
-			alert('Message cannot be empty');
-			return;
+
+	$("#logout-link").click(function() {
+		if (username !== "" && username !== undefined) {
+			$.ajax({
+				url: "rest/chat/users/loggedIn/" + username,
+				type: "DELETE",
+				data: "",
+				complete: function(data) {
+					sessionStorage.setItem('username', "");
+	                alert("User logged out");
+	                window.location.href='./index.html';
+	            }
+			});
+		} else {
+			window.location.href='./index.html';
 		}
-
-		$.ajax({
-			url: "rest/chat/messages/all",
-			type: "POST",
-			data: JSON.stringify({"senderUsername":username, "recieverUsername": "all", "messageContent":msgText}),
-			contentType: "application/json",
-			success: function(data) {
-                alert("Message sent");
-                console.log("Message sent");
-                return;
-            },
-            error: function(err) {
-                alert("Message is not sent");
-                return;
-            }
-		});
-
-		$('#msgText').val('');
-		/*$.ajax({
-			url: "rest/chat/post/" + msgText,
-			type: "POST",
-			data: {},
-			contentType: "application/json",
-			dataType: "json",
-			complete: function(data) {
-				alert("Message sent to all active users");
-			}	
-		});*/
-		
 	});
 
-	$("#btnSendOne").click(function() {
-		console.log("Ispisi")
-		const msgText = $("#msgText").val();
-		if (msgText === "" || msgText === undefined) {
-			alert("Message cannot be empty");
-			return;
-		}
-
-		var el = document.getElementById("registeredUsers");
-		var recieverUsername = el.options[el.selectedIndex].value;
-
-		$.ajax({
-			url: "rest/chat/messages/user",
-			type: "POST",
-			data: JSON.stringify({"senderUsername":username, "recieverUsername": recieverUsername, "messageContent":msgText}),
-			contentType: "application/json",
-			success: function(data) {
-                alert("Message sent");
-                console.log("Message sent");
-                return;
-            },
-            error: function(err) {
-                alert("Message is not sent");
-                return;
-            }
-		});
-
-		$('#registeredUsers').html('');
-		$('#msgText').val('');
-		$('#sendSpecificUser').css('display', 'none');
-	});
-
-	$("#btnLogout").click(function() {
-		$.ajax({
-			url: "rest/chat/users/logout/" + username,
-			type: "DELETE",
-			data: "",
-			complete: function(data) {
-				sessionStorage.setItem('username', "");
-                alert("User logged out");
-                window.location.href='./index.html';
-            }
-		});
-	});
-
-	$("#btnAllRegistered").click(function() {
+	$("#users-tab").click(function() {
 		$.ajax({
 			url: "rest/chat/users/registered",
 			type: "GET",
 			success: function(data) {
-				let registeredUsers = '--- Registered users ---\n';
-				for (usrname of data) {
-					registeredUsers += usrname + "\n";
+				let i = 1;
+				var divRegisteredList = document.getElementById('registeredList');
+				divRegisteredList.innerHTML = "";
+				for (u of data) {
+					divRegisteredList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
+					i += 1;
 				}
-				alert(registeredUsers);
+
+				$.ajax({
+					url: "rest/chat/users/loggedIn",
+					type: "GET",
+					success: function(data) {
+						let i = 1;
+						var divLoggedinList = document.getElementById('loggedinList');
+						divLoggedinList.innerHTML = "";
+						for (u of data) {
+							divLoggedinList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
+							i += 1;
+						}
+		            }
+				});
             }
 		});
 	});
 
-	$("#btnAllLoggedIn").click(function() {
-		$.ajax({
-			url: "rest/chat/users/loggedIn",
-			type: "GET",
-			success: function(data) {
-				let loggedInUsers = '--- Logged in users ---\n';
-				for (usrname of data) {
-					loggedInUsers += usrname + "\n";
-				}
-				alert(loggedInUsers);
-            }
-		});
-	});
+	$('.selectpicker').selectpicker();
 
-	$("#btnChooseReciever").click(function() {
-		$('#registeredUsers').html('');
-		$('#sendSpecificUser').css('display', 'block');
+	$("#send-message-tab").click(function() {
+		var div = document.getElementById('showMessage');
+		div.innerHTML = "";
+		var selectUsers = document.getElementById('select-users');
+		selectUsers.innerHTML = "";
+		document.getElementById('message-title').value = "";
+		document.getElementById('message-content').value = "";
 
 		$.ajax({
 			url: "rest/chat/users/registered",
 			type: "GET",
 			success: function(data) {
-				var select = document.getElementById('registeredUsers');
+				var selectUsers = document.getElementById('select-users');
+				var opt = document.createElement('option');
+				opt.value = "All users";
+				opt.innerHTML = "All users";
+				selectUsers.appendChild(opt);
 				
 				for (usrname of data) {
 					var opt = document.createElement('option');
 					opt.value = usrname;
 				    opt.innerHTML = usrname;
-				    select.appendChild(opt);
+				    selectUsers.appendChild(opt);
 				}
+
+				$('.selectpicker').selectpicker('refresh');
             }
 		});
+
 	});
 
-	$("#btnGetMessages").click(function() {
-		$('#recievedMessages').empty();
+	$("#btnSendMessage").click(function() {
+		var div = document.getElementById('showMessage');
+		div.innerHTML = "";
+
+		var receiverUsername = $("#select-users").val();
+		if (receiverUsername === "" || receiverUsername === undefined) {
+			var div = document.getElementById('showMessage');
+			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Choose receiver</div>';
+			return;
+		}
+
+		var messageTitle = $("#message-title").val();
+		if (messageTitle === "" || messageTitle === undefined) {
+			var div = document.getElementById('showMessage');
+			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Add title</div>';
+			return;
+		}
+
+		var messageContent = $("#message-content").val();
+		if (messageContent === "" || messageContent === undefined) {
+			var div = document.getElementById('showMessage');
+			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Add content</div>';
+			return;
+		}
+
+		if (receiverUsername === "All users") {
+			$.ajax({
+			url: "rest/chat/messages/all",
+			type: "POST",
+			data: JSON.stringify({"senderUsername":username, "recieverUsername": "all", "messageContent":messageContent, "messageTitle": messageTitle}),
+			contentType: "application/json",
+			success: function(data) {
+                var div = document.getElementById('showMessage');
+				div.innerHTML = '<div class="alert alert-success" role="alert"><b>Success:</b> Message is sent</div>';
+				return;
+            },
+            error: function(err) {
+                var div = document.getElementById('showMessage');
+				div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Message is not sent</div>';
+				return;
+            }
+			});
+		} else {
+			$.ajax({
+				url: "rest/chat/messages/user",
+				type: "POST",
+				data: JSON.stringify({"senderUsername":username, "recieverUsername": receiverUsername, "messageContent":messageContent, "messageTitle": messageTitle}),
+				contentType: "application/json",
+				success: function(data) {
+	            	var div = document.getElementById('showMessage');
+					div.innerHTML = '<div class="alert alert-success" role="alert"><b>Success:</b> Message is sent</div>';
+					return;
+	            },
+	            error: function(err) {
+	                var div = document.getElementById('showMessage');
+					div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Message is not sent</div>';
+					return;
+	            }
+			});
+		}
+
+		$('#select-users').val('');
+		$('#message-title').val('');
+		$('#message-content').val('');
+	});
+
+	$("#inbox-tab").click(function() {
 		$.ajax({
 			url: "rest/chat/messages/" + username,
 			type: "GET",
 			success: function(data) {
-				var div = document.getElementById('recievedMessages');
-				var inner = ""
-				for (el of data) {
-					div.innerHTML += "<u>Sender:</u> " + "<b>" + el.senderUsername + "</b>" + "<br/>";
-					div.innerHTML += "<b>" +el.messageContent + "</b>" + "<br/><hr>";
+				var divRecievedMessages = document.getElementById('recievedMessages');
+				divRecievedMessages.innerHTML = "";
+
+				var divInboxMessage = document.getElementById('inbox-message');
+				if (data.length !== 0) {
+					divInboxMessage.innerHTML = '';
+				} else {
+					divInboxMessage.innerHTML = '<center><p class="text-small mt-2 font-weight-light">Inbox is empty.</p></center>';
+				}
+
+				var dataReverse = data.reverse();
+				for (el of dataReverse) {
+	                divRecievedMessages.innerHTML += '<li class="timeline-item bg-white rounded ml-3 p-4 shadow"><div class="timeline-arrow"></div><h2 class="h5 mb-0">' + el.messageTitle + '</h2><span class="small text-gray" style="margin-right: 1em; font-weight: bold"><i class="fa fa-user-circle-o mr-1"></i>' + el.senderUsername + '   </span><span class="small text-gray" style="font-weight: bold"><i class="fa fa-clock-o mr-1"></i>' + el.dateSent + '</span><p class="text-small mt-2 font-weight-normal">' + el.messageContent + '</p></li>';
 				}
             }
 		});
 	});
 	
 	try {
-		socket = new WebSocket(host);
+		socket = new WebSocket(host + "/" + sessionStorage.getItem('username'));
 	
 		console.log('connect: Socket Status: ' + socket.readyState);
 		
@@ -174,10 +234,36 @@ $(document).ready(function() {
 			console.log('onopen: Socket Status: ' + socket.readyState + ' (open)');
 		}
 
-		console.log(socket);
 		
-		socket.onmessage = function(msg) {
-			console.log('onmessage: Received: ' + msg.data);
+		socket.onmessage = function(event) {
+			var socketMessage = JSON.parse(event.data);
+			var msg = JSON.parse(socketMessage.message);
+			var type = socketMessage.type;
+			let i = 1;
+			switch(type) {
+    			case "registered":
+					var divRegisteredList = document.getElementById('registeredList');
+					divRegisteredList.innerHTML = "";
+					for (u of msg) {
+						divRegisteredList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
+						i += 1;
+					}
+					break;
+				case "logged":
+					var divLoggedinList = document.getElementById('loggedinList');
+					divLoggedinList.innerHTML = "";
+					for (u of msg) {
+						divLoggedinList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
+						i += 1;
+					}
+					break;
+				case "message":
+					var divInboxMessage = document.getElementById('inbox-message');
+					divInboxMessage.innerHTML = '';
+					var divRecievedMessages = document.getElementById('recievedMessages');
+					divRecievedMessages.innerHTML = '<li class="timeline-item bg-white rounded ml-3 p-4 shadow"><div class="timeline-arrow"></div><h2 class="h5 mb-0">' + msg.messageTitle + '</h2><span class="small text-gray" style="margin-right: 1em; font-weight: bold"><i class="fa fa-user-circle-o mr-1"></i>' + msg.senderUsername + '   </span><span class="small text-gray" style="font-weight: bold"><i class="fa fa-clock-o mr-1"></i>' + msg.dateSent + '</span><p class="text-small mt-2 font-weight-normal">' + msg.messageContent + '</p></li>' + divRecievedMessages.innerHTML;
+					break;
+			}
 		}
 		
 		socket.onclose = function() {
@@ -193,53 +279,119 @@ $(document).ready(function() {
 
 </head>
 <body>
-	<center>
-		<h2>ChatApp</h2>
-		<table>
-			<tr>
-				<td>
-					<button id="btnAllRegistered">Get all registered users</button>
-				</td>
-				<td>
-					<button id="btnAllLoggedIn">Get all logged in users</button>
-				</td>
-				<td>
-					<button id="btnLogout">Logout</button>
-				</td>
-			</tr>
-		</table>
-		<br/>
-		<table>
-			<tr>
-				<td valign="top"><label>Message: </label></td>
-				<td><textarea id="msgText" rows="4" cols="50" placeholder="message"></textarea></td>
-				<td valign="top">
-					<div id="sendSpecificUser" style="display: none">
-				 		<select id="registeredUsers">
-						</select>
-						<br/>
-						<button id="btnSendOne">Send</button>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td align="right" colspan="3"><button id="btnSend">Send to all users</button></td>
-			</tr>
-			<tr>
-				<td align="right" colspan="3"><button id="btnChooseReciever">Choose reciever user</button></td>
-			</tr>
-		</table>
-		<br/>
-		<table>
-			<tr>
-				<td valign="top">
-					<label>Inbox: </label>
-					<br/>
-					<button id="btnGetMessages">Get inbox</button>
-				</td>
-				<td><div id="recievedMessages" style="height: 200px; width: 500px; border-style: solid; border-width: 1px; overflow: auto;"></div></td>
-			</tr>
-		</table>
-	</center>
+	<div class="container py-5">
+	  <!-- For demo purpose -->
+	  <div class="row mb-5">
+	    <div class="col-lg-8 text-white py-4 text-center mx-auto">
+	      <h1 class="display-4"><b>Chat App</b></h1>
+	      <p id="loggedInAs"class="lead mb-0">Logged in as .</p>
+	      <p id="loggedInAs" class="lead mb-0"><a href="#" id="logout-link">Logout</a></p>
+	      </p>
+	    </div>
+	  </div>
+
+	  <div class="p-5 bg-white rounded shadow mb-5">
+	    <!-- Lined tabs-->
+	    <ul id="myTab2" role="tablist" class="nav nav-tabs nav-pills with-arrow lined flex-column flex-sm-row text-center">
+	      <li class="nav-item flex-sm-fill">
+	        <a id="send-message-tab" data-toggle="tab" href="#send-message" role="tab" aria-controls="send-message" aria-selected="true" class="nav-link text-uppercase font-weight-bold mr-sm-3 rounded-0 active">Send</a>
+	      </li>
+	      <li class="nav-item flex-sm-fill">
+	        <a id="inbox-tab" data-toggle="tab" href="#inbox" role="tab" aria-controls="inbox" aria-selected="false" class="nav-link text-uppercase font-weight-bold mr-sm-3 rounded-0">Inbox</a>
+	      </li>
+	      <li class="nav-item flex-sm-fill">
+	        <a id="users-tab" data-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="false" class="nav-link text-uppercase font-weight-bold rounded-0">Users</a>
+	      </li>
+	    </ul>
+	    <div id="myTab2Content" class="tab-content">
+	      <div id="send-message" role="tabpanel" aria-labelledby="send-message-tab" class="tab-pane fade px-4 py-5 message-class scrollbar-primary show active">
+		      	<div class="col-lg-12 bg-white rounded shadow" id="message-structure">
+		      			<div id="showMessage"></div>
+			      		<div class="form-group row">
+			      			<label for="reciever-label" class="col-sm-2 col-form-label">Receiver</label>
+			      			<div class="col-sm-2">
+						    	<select id="select-users" class="selectpicker" data-live-search="true" title="Choose receiver...">
+								</select>
+							</div>
+						</div>
+						<div class="form-group row">
+						    <label for="title-label" class="col-sm-2 col-form-label">Title</label>
+						    <div class="col-sm-10">
+						    	<input class="form-control" id="message-title" placeholder="Title">
+							</div>
+						</div>
+						<div class="form-group">
+						    <label for="message-content-label">Content</label>
+						    <textarea class="form-control" id="message-content" rows="5"></textarea>
+						</div>
+						<div class = "form-group">
+							<button type="submit" class="btn btn-primary btn-lg float-right" id="btnSendMessage">Submit</button>
+						</div>
+				</div>
+	      </div>
+
+	      <div id="inbox" role="tabpanel" aria-labelledby="inbox-tab" class="tab-pane fade px-4 py-5 message-class scrollbar-primary">
+	        	<div class="col-lg-12 mx-auto">
+	                
+	                <div id="inbox-message">
+	                	<center>
+	                		<p class="text-small mt-2 font-weight-light">
+	                			Inbox is empty.
+	                		</p>
+	                	</center>
+	                </div>
+	                <!-- Timeline -->
+	                <ul id="recievedMessages" class="timeline">
+	                </ul><!-- End -->
+
+	            </div>
+	      </div>
+	      <div id="users" role="tabpanel" aria-labelledby="users-tab" class="tab-pane fade px-4 py-5 message-class scrollbar-primary">
+	      	<div class="row">
+	      		<div class="col-lg-4 mx-auto bg-white rounded shadow">
+
+	                <!-- Fixed header table-->
+	                <div class="table-responsive">
+	                    <table class="table table-fixed">
+	                        <thead>
+	                            <tr>
+	                            	<center>
+		                                <th scope="col" class="col-4">#</th>
+		                                <th scope="col" class="col-8">Registered</th>
+	                            	</center>
+	                            </tr>
+	                        </thead>
+	                        <tbody id="registeredList">
+	                        </tbody>
+	                    </table>
+	                </div><!-- End -->
+	                
+	            </div>
+
+	            <div class="col-lg-4 mx-auto bg-white rounded shadow">
+
+	                <!-- Fixed header table-->
+	                <div class="table-responsive">
+	                    <table class="table table-fixed">
+	                        <thead>
+	                            <tr>
+	                            	<center>
+		                                <th scope="col" class="col-4">#</th>
+		                                <th scope="col" class="col-8">Logged in</th>
+	                            	</center>
+	                            </tr>
+	                        </thead>
+	                        <tbody id="loggedinList">
+	                        </tbody>
+	                    </table>
+	                </div><!-- End -->
+	                
+	            </div>
+	        </div>
+	      </div>
+	    </div>
+	    <!-- End lined tabs -->
+	  </div>
+	</div>
 </body>
 </html>
