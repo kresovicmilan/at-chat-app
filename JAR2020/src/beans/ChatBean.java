@@ -37,8 +37,11 @@ import ws.WSEndPoint;
 @LocalBean
 public class ChatBean implements ChatRemote {
 	
-	private Map<String, User> users = new HashMap<String, User>();
-	private Map<String, User> loggedInUsers = new HashMap<String, User>();
+	//private Map<String, User> users = new HashMap<String, User>();
+	//private Map<String, User> loggedInUsers = new HashMap<String, User>();
+	
+	@EJB
+	StorageBean storageBean;
 	
 	@EJB
 	WSEndPoint ws;
@@ -59,15 +62,15 @@ public class ChatBean implements ChatRemote {
 		System.out.println("---- REGISTER ----");
 		System.out.println("[INFO] Username: " + u.getUsername());
 		System.out.println("[INFO] Password: " + u.getPassword());
-		for (User userSpecific: users.values()) {
+		for (User userSpecific: storageBean.getUsers().values()) {
 			if (userSpecific.getUsername().equals(u.getUsername())) {
 				System.out.println("[REGISTER - FORBIDDEN] User already exist");
 				return Response.status(400).entity("Username already exists").build();
 			}
 		}
 		
-		this.loggedInUsers.put(u.getUsername(), u);
-		this.users.put(u.getUsername(), u);
+		storageBean.getLoggedInUsers().put(u.getUsername(), u);
+		storageBean.getUsers().put(u.getUsername(), u);
 		System.out.println("[REGISTER - SUCCESSFUL] User registered and logged in");
 		return Response.status(200).entity("User registered and logged in").build();
     }
@@ -80,9 +83,9 @@ public class ChatBean implements ChatRemote {
 		System.out.println("---- LOGIN ----");
 		System.out.println("[INFO] Username: " + u.getUsername());
 		System.out.println("[INFO] Password: " + u.getPassword());
-		for (User userSpecific: users.values()) {
+		for (User userSpecific: storageBean.getUsers().values()) {
 			if (userSpecific.getUsername().equals(u.getUsername()) && userSpecific.getPassword().equals(u.getPassword())) {
-				this.loggedInUsers.put(u.getUsername(), u);
+				storageBean.getLoggedInUsers().put(u.getUsername(), u);
 				System.out.println("[LOGIN - SUCCESSFUL] User logged in");
 				return Response.status(200).entity("User credentials are correct").build();
 			}
@@ -101,9 +104,9 @@ public class ChatBean implements ChatRemote {
 		System.out.println("[INFO] Username: " + username);
 		List<Session> activeSessions = new ArrayList<>(ws.getUserSessions().get(username));
 		if (activeSessions.size() == 1) {
-			for (User userSpecific: loggedInUsers.values()) {
+			for (User userSpecific: storageBean.getLoggedInUsers().values()) {
 				if (userSpecific.getUsername().equals(username)) {
-					this.loggedInUsers.remove(userSpecific.getUsername());
+					storageBean.getLoggedInUsers().remove(userSpecific.getUsername());
 					System.out.println("[LOGOUT - SUCCESSFUL] User logged out");
 					return Response.status(200).entity("User is logged out").build();
 				}
@@ -123,7 +126,7 @@ public class ChatBean implements ChatRemote {
 	public List<String> getRegistered() {
 		System.out.println("---- ALL REGISTERED USERS ----");
 		List<String> usernames = new ArrayList();
-		for(User u: users.values()) {
+		for(User u: storageBean.getUsers().values()) {
 			System.out.println(u.getUsername());
 			usernames.add(u.getUsername());
 		}
@@ -138,7 +141,7 @@ public class ChatBean implements ChatRemote {
 		System.out.println("---- ALL LOGGED IN USERS ----");
 		List<String> activeUsers = new ArrayList<>(ws.getUserSessions().keySet());
 		List<String> usernames = new ArrayList();
-		for(User u: loggedInUsers.values()) {
+		for(User u: storageBean.getLoggedInUsers().values()) {
 			System.out.println(u.getUsername());
 			usernames.add(u.getUsername());
 		}
@@ -160,13 +163,13 @@ public class ChatBean implements ChatRemote {
 		
 		message.setMessageContent(messageDTO.getMessageContent());
 		
-		User sender = this.users.get(messageDTO.getSenderUsername());
+		User sender = storageBean.getUsers().get(messageDTO.getSenderUsername());
 		if (sender == null) {
 			System.out.println("[ERROR] Sender doesn't exist: " + messageDTO.getSenderUsername());
 			return Response.status(400).entity("Sender doesn't exist").build();
 		}
 		
-		User reciever = this.users.get(messageDTO.getRecieverUsername());
+		User reciever = storageBean.getUsers().get(messageDTO.getRecieverUsername());
 		if (reciever == null) {
 			System.out.println("[ERROR] Reciever doesn't exist: " + messageDTO.getRecieverUsername());
 			return Response.status(400).entity("Reciever doesn't exist").build();
@@ -202,7 +205,7 @@ public class ChatBean implements ChatRemote {
 		System.out.println("[INFO] Message title: " + messageDTO.getMessageTitle());
 		System.out.println("[INFO] Message content: " + messageDTO.getMessageContent());
 		
-		User sender = this.users.get(messageDTO.getSenderUsername());
+		User sender = storageBean.getUsers().get(messageDTO.getSenderUsername());
 		if (sender == null) {
 			System.out.println("[ERROR] Sender doesn't exist: " + messageDTO.getSenderUsername());
 			return Response.status(400).entity("Sender doesn't exist").build();
@@ -211,7 +214,7 @@ public class ChatBean implements ChatRemote {
 		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 		String jsonMessageDTO = "";
 		
-		for(User u: users.values()) {
+		for(User u: storageBean.getUsers().values()) {
 			Message message = new Message();
 			message.setMessageContent(messageDTO.getMessageContent());
 			message.setSender(sender);
@@ -242,7 +245,7 @@ public class ChatBean implements ChatRemote {
 		System.out.println("---- ALL MESSAGES ----");
 		System.out.println("[INFO] User: " + username);
 		
-		User claimant = this.users.get(username);
+		User claimant = storageBean.getUsers().get(username);
 		if (claimant == null) {
 			System.out.println("[ERROR] User doesn't exist: " + username);
 			return messagesDTO;
@@ -250,7 +253,7 @@ public class ChatBean implements ChatRemote {
 		
 		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 		System.out.println("---- Inbox ----");
-		for(User u: users.values()) {
+		for(User u: storageBean.getUsers().values()) {
 			if (u.getUsername().equals(username)) {
 				for (Message m: u.getRecievedMessages()) {
 					MessageDTO messageDTO = new MessageDTO(m.getSender().getUsername(), username, m.getMessageContent(), m.getMessageTitle(), dateFormat.format(m.getDateSent()));
