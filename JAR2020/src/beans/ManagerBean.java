@@ -34,9 +34,6 @@ import models.User;
 @Startup
 public class ManagerBean {
 	
-	@EJB
-	RestHostBean restHostBean;
-	
 	private Map<String, User> users;
 	private Map<String, User> loggedInUsers;
 	private Map<String, Host> hosts;
@@ -52,14 +49,17 @@ public class ManagerBean {
 		
 		findMasterIpAddress();
 		setHosts();
-		handshakeInit();
+		if (!masterHost.equals(currentSlaveHost)) {
+			handshakeInit();
+		}
 		
 	}
 	
-	@PostConstruct
+	
 	public void handshakeInit() {
 		System.out.println("Poslao masteru" + hostInfo);
-		restHostBean.connectToMaster(this.currentSlaveHost, this.masterHost);
+		
+		RestHostBean.connectToMaster(this.currentSlaveHost, this.masterHost);
 	}
 	
 	public void setHosts() {

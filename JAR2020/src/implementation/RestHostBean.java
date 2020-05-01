@@ -10,13 +10,11 @@ import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import beans.RestAPI;
 import models.Host;
 
-@Stateless
-@LocalBean
 public class RestHostBean {
 	
-	public void connectToMaster(Host currentSlaveHost, Host masterHost) {
+	public static void connectToMaster(Host currentSlaveHost, Host masterHost) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
-		ResteasyWebTarget target = client.target(masterHost.getIpAddress() + "/WAR2020/rest");
+		ResteasyWebTarget target = client.target("http://" + masterHost.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
 		rest.registerNode(currentSlaveHost);
 	}

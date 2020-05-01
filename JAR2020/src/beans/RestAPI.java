@@ -18,7 +18,7 @@ public interface RestAPI {
     public Response registerNode(Host h);
 
 
-    @POST
+    /*@POST
     @Path("/node")
     public Response notifyNodes(Host h);
 
@@ -36,5 +36,5 @@ public interface RestAPI {
 
     @GET
     @Path("/node")
-    public String heartbeat();
+    public String heartbeat();*/
 }
