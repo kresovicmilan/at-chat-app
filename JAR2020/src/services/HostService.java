@@ -1,5 +1,9 @@
 package services;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
@@ -13,6 +17,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import beans.ManagerBean;
+import implementation.RestHostBuilder;
 import models.Host;
 
 @Stateless
@@ -26,32 +31,44 @@ public class HostService {
 	@POST
     @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response registerNode(Host h) {
-		System.out.println("Master primio" + h.getAlias() + ":" + h.getIpAddress());
-        if (!managerBean.getHosts().containsKey(h.getAlias())) {
-        	managerBean.getHosts().put(h.getAlias(), h);
-        	return Response.status(200).entity("Host is registered").build();
+    public void registerNode(Host newHost) {
+		System.out.println("Master primio" + newHost.getAlias() + ":" + newHost.getIpAddress());
+        if (!managerBean.getHosts().containsKey(newHost.getIpAddress())) {
+        	managerBean.getHosts().put(newHost.getIpAddress(), newHost);
+        	
+        	for (Host h: managerBean.getHosts().values()) {
+        		if ((!h.getIpAddress().equals(newHost.getIpAddress())) && (!h.getIpAddress().equals(managerBean.getMasterHost().getIpAddress()))) {
+        			System.out.println("Poslao new host " + newHost.getIpAddress() + " Na server " + h.getIpAddress());
+        			RestHostBuilder.sendNewHostToHostBuilder(h.getIpAddress(), newHost);
+        		}
+        	}
+        	
+        	RestHostBuilder.sendHostsToNewHostBuilder(newHost.getIpAddress(), managerBean.getHosts().values());
         }
-        
-        return Response.status(400).entity("Host already exists").build();
     }
 
 
     @POST
     @Path("/node")
-    public Response notifyNodes(Host h) {
-        if (!managerBean.getHosts().containsKey(h.getAlias())) {
-        	managerBean.getHosts().put(h.getAlias(), h);
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void sendNewHostToHost(Host newHost) {
+        if (!managerBean.getHosts().containsKey(newHost.getIpAddress())) {
+        	System.out.println("Primio novi host " + newHost.getIpAddress());
+        	managerBean.getHosts().put(newHost.getIpAddress(), newHost);
         }
-        
-        return Response.status(200).entity("Host is registered").build();
     }
 
     @POST
     @Path("/nodes")
-    public String notifyNode() {
-        System.out.println("MASTER CVOR SALJE NOVOM CVORU SVE NEMASTER CVOROVE KOJI POSTOJE");
-        return "OK";
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void sendHostsToNewHost(Collection<Host> otherHosts) {
+    	System.out.println("Usao da doda nove hostove");
+        for(Host h: otherHosts) {
+        	if ((!h.getIpAddress().equals(managerBean.getCurrentSlaveHost().getIpAddress())) && (!h.getIpAddress().equals(managerBean.getMasterHost().getIpAddress()))) {
+        		System.out.println("Dodao " + h.getIpAddress());
+        		managerBean.getHosts().put(h.getIpAddress(), h);
+        	}
+        }
     }
 
     @POST

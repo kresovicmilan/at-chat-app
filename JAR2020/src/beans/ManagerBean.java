@@ -25,7 +25,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import implementation.RestHostBean;
+import implementation.RestHostBuilder;
 import models.Host;
 import models.User;
 
@@ -49,17 +49,16 @@ public class ManagerBean {
 		
 		findMasterIpAddress();
 		setHosts();
+		
 		if (!masterHost.equals(currentSlaveHost)) {
 			handshakeInit();
 		}
-		
 	}
 	
 	
 	public void handshakeInit() {
 		System.out.println("Poslao masteru " + hostInfo);
-		
-		RestHostBean.connectToMaster(this.currentSlaveHost, this.masterHost);
+		RestHostBuilder.registerNodeBuilder(this.currentSlaveHost, this.masterHost);
 	}
 	
 	public void setHosts() {
@@ -141,8 +140,45 @@ public class ManagerBean {
 	public void setHosts(Map<String, Host> hosts) {
 		this.hosts = hosts;
 	}
-	
-	
-	
+
+
+	public String getMasterInfo() {
+		return masterInfo;
+	}
+
+
+	public void setMasterInfo(String masterInfo) {
+		this.masterInfo = masterInfo;
+	}
+
+
+	public String getHostInfo() {
+		return hostInfo;
+	}
+
+
+	public void setHostInfo(String hostInfo) {
+		this.hostInfo = hostInfo;
+	}
+
+
+	public Host getMasterHost() {
+		return masterHost;
+	}
+
+
+	public void setMasterHost(Host masterHost) {
+		this.masterHost = masterHost;
+	}
+
+
+	public Host getCurrentSlaveHost() {
+		return currentSlaveHost;
+	}
+
+
+	public void setCurrentSlaveHost(Host currentSlaveHost) {
+		this.currentSlaveHost = currentSlaveHost;
+	}
 	
 }
