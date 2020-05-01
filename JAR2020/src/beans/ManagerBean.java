@@ -57,7 +57,7 @@ public class ManagerBean {
 	
 	
 	public void handshakeInit() {
-		System.out.println("Poslao masteru" + hostInfo);
+		System.out.println("Poslao masteru " + hostInfo);
 		
 		RestHostBean.connectToMaster(this.currentSlaveHost, this.masterHost);
 	}
