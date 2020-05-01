@@ -32,6 +32,7 @@ public class RestHostBuilder {
 	}
 	
 	public static void sendHostsToNewHostBuilder(String receivingHostIp, Collection<Host> otherHosts) {
+		System.out.println("Usao u sendHostToNewHostBuilder");
 		ResteasyClient client = new ResteasyClientBuilder().build();
 		ResteasyWebTarget target = client.target("http://" + receivingHostIp + "/WAR2020/rest/nodes");
 		RestAPI rest = target.proxy(RestAPI.class);

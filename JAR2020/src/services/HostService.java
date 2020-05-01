@@ -32,7 +32,7 @@ public class HostService {
     @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
     public void registerNode(Host newHost) {
-		System.out.println("Master primio" + newHost.getAlias() + ":" + newHost.getIpAddress());
+		System.out.println("Master primio " + newHost.getAlias() + ":" + newHost.getIpAddress());
         if (!managerBean.getHosts().containsKey(newHost.getIpAddress())) {
         	managerBean.getHosts().put(newHost.getIpAddress(), newHost);
         	
@@ -43,6 +43,7 @@ public class HostService {
         		}
         	}
         	
+        	System.out.println("Master poslao ostale hostove na " + newHost.getAlias() + ":" + newHost.getIpAddress());
         	RestHostBuilder.sendHostsToNewHostBuilder(newHost.getIpAddress(), managerBean.getHosts().values());
         }
     }

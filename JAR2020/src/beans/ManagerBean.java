@@ -49,16 +49,17 @@ public class ManagerBean {
 		
 		findMasterIpAddress();
 		setHosts();
-		
-		if (!masterHost.equals(currentSlaveHost)) {
-			handshakeInit();
-		}
 	}
 	
-	
+	@PostConstruct
 	public void handshakeInit() {
-		System.out.println("Poslao masteru " + hostInfo);
-		RestHostBuilder.registerNodeBuilder(this.currentSlaveHost, this.masterHost);
+		System.out.println("Krenuo handshake i master je " + masterHost.getIpAddress());
+		
+		if (!masterHost.equals(currentSlaveHost)) {
+			System.out.println("Poslao masteru " + hostInfo);
+			RestHostBuilder.registerNodeBuilder(this.currentSlaveHost, this.masterHost);
+		}
+		
 	}
 	
 	public void setHosts() {
