@@ -1,4 +1,4 @@
-package beans;
+package services;
 
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
@@ -12,22 +12,24 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import beans.ManagerBean;
 import models.Host;
 
 @Stateless
-@Path("/server")
+@Path("/host")
 @LocalBean
-public class ServerBackendBean {
+public class HostService {
 	
 	@EJB
-	StorageBean storageBean;
+	ManagerBean managerBean;
 	
 	@POST
     @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response registerNode(Host h) {
-        if (!storageBean.getHosts().containsKey(h.getAlias())) {
-        	storageBean.getHosts().put(h.getAlias(), h);
+		System.out.println("Master primio" + h.getAlias() + ":" + h.getIpAddress());
+        if (!managerBean.getHosts().containsKey(h.getAlias())) {
+        	managerBean.getHosts().put(h.getAlias(), h);
         	return Response.status(200).entity("Host is registered").build();
         }
         
@@ -38,8 +40,8 @@ public class ServerBackendBean {
     @POST
     @Path("/node")
     public Response notifyNodes(Host h) {
-        if (!storageBean.getHosts().containsKey(h.getAlias())) {
-        	storageBean.getHosts().put(h.getAlias(), h);
+        if (!managerBean.getHosts().containsKey(h.getAlias())) {
+        	managerBean.getHosts().put(h.getAlias(), h);
         }
         
         return Response.status(200).entity("Host is registered").build();
@@ -53,7 +55,7 @@ public class ServerBackendBean {
     }
 
     @POST
-    @Path("/users/loggedin")
+    @Path("/users/loggedIn")
     public String sendAllLoggedInUsersToNewNode() {
         System.out.println("NOVOM CVORU SE SALJU SVI ULOGOVANI KORISNICI");
         return "OK";
@@ -62,7 +64,7 @@ public class ServerBackendBean {
     @DELETE
     @Path("/node/{alias}")
     public Response removeNode(@PathParam("alias") String alias) {
-        storageBean.getHosts().remove(alias);
+        managerBean.getHosts().remove(alias);
         return Response.status(200).entity("Host is registered").build();
     }
 

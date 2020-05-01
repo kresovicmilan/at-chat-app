@@ -41,7 +41,7 @@ public class ChatBean implements ChatRemote {
 	//private Map<String, User> loggedInUsers = new HashMap<String, User>();
 	
 	@EJB
-	StorageBean storageBean;
+	ManagerBean storageBean;
 	
 	@EJB
 	WSEndPoint ws;
