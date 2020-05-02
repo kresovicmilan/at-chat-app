@@ -40,7 +40,7 @@ public class RestHostBuilder {
 		return rest.sendHostsToNewHost(currentSlaveHost);
 	}
 	
-	public static UpdatePackage sendAllLoggedInUsersToNodeBuilder(Host sender, Host receiver, UpdatePackage updatePackage) {
+	public static UpdatePackage sendAllLoggedInUsersToNodeBuilder(Host sender, Host receiver, UpdatePackage updatePackage, int handshake) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
 		ResteasyWebTarget target = client.target("http://" + receiver.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
@@ -50,6 +50,6 @@ public class RestHostBuilder {
     		System.out.println("ALI NIJE NULL " + sender.getIpAddress());
     	}
     	
-		return rest.sendAllLoggedInUsersToNode(sender, updatePackage);
+		return rest.sendAllLoggedInUsersToNode(sender, updatePackage, handshake);
 	}
 }
