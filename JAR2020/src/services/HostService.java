@@ -85,6 +85,10 @@ public class HostService implements HostServiceRemote {
 
     @Override
 	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage) {
+    	if(sender == null) {
+    		System.out.println("ZASTO NE RADIS");
+    	}
+    	
 		if (updatePackage == null) {
 			System.out.println("[INFO] [MASTER] Fourth step - Received request from host: " + sender.getIpAddress());
 			UpdatePackage newUpdatePackage = new UpdatePackage();

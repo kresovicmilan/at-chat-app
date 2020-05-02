@@ -44,6 +44,12 @@ public class RestHostBuilder {
 		ResteasyClient client = new ResteasyClientBuilder().build();
 		ResteasyWebTarget target = client.target("http://" + receiver.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
+		if(sender == null) {
+    		System.out.println("U BUILDERU NE RADI");
+    	} else {
+    		System.out.println("ALI NIJE NULL " + sender.getIpAddress());
+    	}
+    	
 		return rest.sendAllLoggedInUsersToNode(sender, updatePackage);
 	}
 }
