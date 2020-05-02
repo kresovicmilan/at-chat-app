@@ -66,7 +66,7 @@ public class HostManagerBean {
 				System.out.println("[INFO] [NEW HOST] Third step - FINISHED");
 				
 				System.out.println("[INFO] [NEW HOST] Fourth step - Receiving logged in users from other hosts");
-				UpdatePackage newUpdatePackage = RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(this.currentSlaveHost, this.masterHost, null, true);
+				UpdatePackage newUpdatePackage = RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(this.currentSlaveHost, this.masterHost, null);
 				System.out.println("[INFO] [NEW HOST] Fourth step - Received list of logged users with size: " + newUpdatePackage.getLoggedInUsers().size());
 				System.out.println("[INFO] [NEW HOST] Fourth step - Received set of registered users with size: " + newUpdatePackage.getRegisteredUsers().size());
 				System.out.println("[INFO] [NEW HOST] Fourth step - FINISHED");

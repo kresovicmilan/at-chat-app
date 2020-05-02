@@ -40,10 +40,10 @@ public class RestHostBuilder {
 		return rest.sendHostsToNewHost(currentSlaveHost);
 	}
 	
-	public static UpdatePackage sendAllLoggedInUsersToNodeBuilder(Host sender, Host receiver, UpdatePackage updatePackage, Boolean isHandshake) {
+	public static UpdatePackage sendAllLoggedInUsersToNodeBuilder(Host sender, Host receiver, UpdatePackage updatePackage) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
 		ResteasyWebTarget target = client.target("http://" + receiver.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
-		return rest.sendAllLoggedInUsersToNode(sender, updatePackage, isHandshake);
+		return rest.sendAllLoggedInUsersToNode(sender, updatePackage);
 	}
 }

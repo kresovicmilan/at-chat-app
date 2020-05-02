@@ -40,7 +40,7 @@ public interface RestAPI {
     @Path("/users/loggedIn")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage, Boolean isHandshake);
+	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage);
 
     /*@DELETE
     @Path("/node/{alias}")
