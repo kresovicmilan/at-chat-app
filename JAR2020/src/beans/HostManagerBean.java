@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -80,7 +81,8 @@ public class HostManagerBean {
 				UpdatePackage newUpdatePackage = RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(this.currentSlaveHost, this.masterHost, new UpdatePackage(), 1);
 				foreignLoggedUsers = new Gson().fromJson(newUpdatePackage.getLoggedInUsers().get(0), foreignLoggedUsers.getClass());
 				System.out.println("[INFO] [NEW HOST] Fourth step - Received map of logged users");
-				foreignRegisteredUsers = new Gson().fromJson(newUpdatePackage.getRegisteredUsers().iterator().next(), foreignRegisteredUsers.getClass());
+				Map<String, List<String>> helpMap = new Gson().fromJson(newUpdatePackage.getRegisteredUsers().iterator().next(), foreignRegisteredUsers.getClass());
+				helpConversion(helpMap);
 				System.out.println("[INFO] [NEW HOST] Fourth step - Received set of registered users");
 			} catch (Exception e) {
 				startAgain("Fourth");
@@ -185,6 +187,14 @@ public class HostManagerBean {
 		this.masterInfo = masterIp;
 		this.hostInfo = hostIp;
 		
+	}
+	
+	public void helpConversion(Map<String, List<String>> helpMap) {
+		Map<String, Set<String>> newMap = new HashMap<>();
+		for(Map.Entry<String, List<String>> entry: helpMap.entrySet()) {
+			newMap.put(entry.getKey(), new HashSet<String>(entry.getValue()));
+		}
+		foreignRegisteredUsers = newMap;
 	}
 	
 	public Map<String, Host> getHosts() {

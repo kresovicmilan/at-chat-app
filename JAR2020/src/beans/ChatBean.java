@@ -3,6 +3,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,9 +73,21 @@ public class ChatBean implements ChatRemote {
 		}
 		
 		for (Map.Entry<String, Set<String>> entry : hostManagerBean.getForeignRegisteredUsers().entrySet()) {
-			if (entry.getValue().size() == 0) {
-				continue;
+			System.out.println(entry.getValue());
+			if (entry.getValue() instanceof ArrayList) {
+				System.out.println("Jeste array list");
 			}
+			
+			if (entry.getValue() instanceof HashSet) {
+				System.out.println("Jeste hash set");
+			}
+			
+			if (entry.getValue() instanceof Set) {
+				System.out.println("Jeste set");
+			}
+			/*if (entry.getValue().size() == 0) {
+				continue;
+			}*/
 			List<String> convertedToList = new ArrayList<>(entry.getValue());
 			for (String s: convertedToList) {
 				if (s.equals(u.getUsername())) {

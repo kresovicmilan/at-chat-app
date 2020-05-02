@@ -176,7 +176,7 @@ public class HostService implements HostServiceRemote {
 	    				RestHostBuilder.deleteHostBuilder(h, deletedHost);
 	    			}
 	    		}
-	    		System.out.println("[DELETE] [MASTER] All other host are purget from {" + alias + "}");
+	    		System.out.println("[DELETE] [MASTER] All other host are purged from {" + alias + "}");
 	    	}
 		}
     }
