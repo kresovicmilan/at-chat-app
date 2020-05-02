@@ -32,7 +32,7 @@ public interface HostServiceRemote {
     public Collection<Host> sendHostsToNewHost(Host newHost);
 	
 	@POST
-    @Path("/users/loggedin")
+    @Path("/users/loggedIn")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
 	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage, Boolean isHandshake);

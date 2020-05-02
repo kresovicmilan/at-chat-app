@@ -90,12 +90,12 @@ public class HostManagerBean {
 		String ipSlave = this.hostInfo.split(":")[1];
 		String portSlave = this.hostInfo.split(":")[2];
 		
-		Host masterHost = new Host(aliasMaster, ipMaster + ":" + portMaster, true);
+		Host masterHost = new Host(aliasMaster, ipMaster + ":" + portMaster);
 		this.hosts.put(masterHost.getIpAddress(), masterHost);
 		this.masterHost = masterHost;
 		
 		if (!ipMaster.equals(System.getProperty("jboss.bind.address"))) {
-			Host slaveHost = new Host(aliasSlave, ipSlave + ":" + portSlave, false);
+			Host slaveHost = new Host(aliasSlave, ipSlave + ":" + portSlave);
 			this.hosts.put(slaveHost.getIpAddress(), slaveHost);
 			this.currentSlaveHost = slaveHost;
 		} else {
