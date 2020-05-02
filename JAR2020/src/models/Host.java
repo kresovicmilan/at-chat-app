@@ -1,10 +1,6 @@
 package models;
 
-import java.io.Serializable;
-
-public class Host implements Serializable {
-	private static final long serialVersionUID = 1L;
-	
+public class Host {
 	private String alias;
 	private String ipAddress;
 	private Boolean isMaster;
