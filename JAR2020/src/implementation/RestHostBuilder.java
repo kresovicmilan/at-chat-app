@@ -13,6 +13,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 
+import DTO.HandshakeDTO;
 import models.Host;
 import models.UpdatePackage;
 import models.User;
@@ -49,7 +50,11 @@ public class RestHostBuilder {
     	} else {
     		System.out.println("ALI NIJE NULL " + sender.getIpAddress());
     	}
+		HandshakeDTO handshakeDTO = new HandshakeDTO();
+    	handshakeDTO.setSender(sender);
+    	handshakeDTO.setUpdatePackage(updatePackage);
+    	handshakeDTO.setHandshake(1);
     	
-		return rest.sendAllLoggedInUsersToNode(sender, updatePackage, handshake);
+		return rest.sendAllLoggedInUsersToNode(handshakeDTO);
 	}
 }

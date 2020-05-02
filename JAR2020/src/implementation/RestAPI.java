@@ -14,6 +14,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import DTO.HandshakeDTO;
 import models.Host;
 import models.UpdatePackage;
 import models.User;
@@ -40,7 +41,7 @@ public interface RestAPI {
     @Path("/users/loggedIn")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage, int handshake);
+	public UpdatePackage sendAllLoggedInUsersToNode(HandshakeDTO handshakeDTO);
 
     /*@DELETE
     @Path("/node/{alias}")

@@ -20,6 +20,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import DTO.HandshakeDTO;
 import beans.HostManagerBean;
 import beans.StorageBean;
 import implementation.RestHostBuilder;
@@ -84,7 +85,11 @@ public class HostService implements HostServiceRemote {
     }
 
     @Override
-	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage, int handshake) {
+    public UpdatePackage sendAllLoggedInUsersToNode(HandshakeDTO handshakeDTO) {
+    	Host sender = handshakeDTO.getSender();
+    	UpdatePackage updatePackage = handshakeDTO.getUpdatePackage();
+    	int handshake = handshakeDTO.getHandshake();
+    	
     	if(sender == null) {
     		System.out.println("ZASTO NE RADIS");
     	}
