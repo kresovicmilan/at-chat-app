@@ -26,7 +26,7 @@ public class RestHostBuilder {
 	
 	public static void sendNewHostToHostBuilder(String receivingHostIp, Host newHost) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
-		ResteasyWebTarget target = client.target("http://" + receivingHostIp + "/WAR2020/rest/node");
+		ResteasyWebTarget target = client.target("http://" + receivingHostIp + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
 		rest.sendNewHostToHost(newHost);
 	}
@@ -34,7 +34,7 @@ public class RestHostBuilder {
 	
 	public static Collection<Host> sendHostsToNewHostBuilder(Host currentSlaveHost, Host masterHost) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
-		ResteasyWebTarget target = client.target("http://" + masterHost.getIpAddress() + "/WAR2020/rest/nodes");
+		ResteasyWebTarget target = client.target("http://" + masterHost.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
 		return rest.sendHostsToNewHost(currentSlaveHost);
 	}
