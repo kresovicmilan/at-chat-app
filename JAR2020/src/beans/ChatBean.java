@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.EJB;
@@ -70,8 +71,11 @@ public class ChatBean implements ChatRemote {
 			}
 		}
 		
-		for (Set<String> setOfForeignRegisteredUsers: hostManagerBean.getForeignRegisteredUsers().values()) {
-			List<String> convertedToList = new ArrayList<>(setOfForeignRegisteredUsers);
+		for (Map.Entry<String, Set<String>> entry : hostManagerBean.getForeignRegisteredUsers().entrySet()) {
+			if (entry.getValue().size() == 0) {
+				continue;
+			}
+			List<String> convertedToList = new ArrayList<>(entry.getValue());
 			for (String s: convertedToList) {
 				if (s.equals(u.getUsername())) {
 					System.out.println("[REGISTER - FORBIDDEN] User already exist on another host");

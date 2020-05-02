@@ -145,7 +145,7 @@ public class HostManagerBean {
 		this.masterHost = masterHost;
 		
 		if (!ipMaster.equals(System.getProperty("jboss.bind.address"))) {
-			Host slaveHost = new Host(aliasSlave, ipSlave + ":" + portSlave);
+			Host slaveHost = new Host(ipSlave + ":" + portSlave, ipSlave + ":" + portSlave);
 			this.hosts.put(slaveHost.getIpAddress(), slaveHost);
 			this.currentSlaveHost = slaveHost;
 		} else {
