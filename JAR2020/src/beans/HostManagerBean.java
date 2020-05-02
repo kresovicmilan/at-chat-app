@@ -78,9 +78,9 @@ public class HostManagerBean {
 			System.out.println("[INFO] [NEW HOST] Fourth step - Receiving logged in users from other hosts");
 			try {
 				UpdatePackage newUpdatePackage = RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(this.currentSlaveHost, this.masterHost, new UpdatePackage(), 1);
-				foreignLoggedUsers = new Gson().fromJson(newUpdatePackage.getLoggedInUsers().get(0), Map.class);
+				foreignLoggedUsers = new Gson().fromJson(newUpdatePackage.getLoggedInUsers().get(0), foreignLoggedUsers.getClass());
 				System.out.println("[INFO] [NEW HOST] Fourth step - Received map of logged users");
-				foreignRegisteredUsers = new Gson().fromJson(newUpdatePackage.getRegisteredUsers().iterator().next(), Map.class);
+				foreignRegisteredUsers = new Gson().fromJson(newUpdatePackage.getRegisteredUsers().iterator().next(), foreignRegisteredUsers.getClass());
 				System.out.println("[INFO] [NEW HOST] Fourth step - Received set of registered users");
 			} catch (Exception e) {
 				startAgain("Fourth");
