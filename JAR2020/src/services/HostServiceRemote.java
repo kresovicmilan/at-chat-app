@@ -1,7 +1,6 @@
 package services;
 
 import java.util.Collection;
-import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -14,7 +13,6 @@ import javax.ws.rs.core.MediaType;
 import DTO.HandshakeDTO;
 import models.Host;
 import models.UpdatePackage;
-import models.User;
 
 public interface HostServiceRemote {
 	

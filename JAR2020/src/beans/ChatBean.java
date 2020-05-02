@@ -3,7 +3,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,21 +72,6 @@ public class ChatBean implements ChatRemote {
 		}
 		
 		for (Map.Entry<String, Set<String>> entry : hostManagerBean.getForeignRegisteredUsers().entrySet()) {
-			System.out.println(entry.getValue());
-			if (entry.getValue() instanceof ArrayList) {
-				System.out.println("Jeste array list");
-			}
-			
-			if (entry.getValue() instanceof HashSet) {
-				System.out.println("Jeste hash set");
-			}
-			
-			if (entry.getValue() instanceof Set) {
-				System.out.println("Jeste set");
-			}
-			/*if (entry.getValue().size() == 0) {
-				continue;
-			}*/
 			List<String> convertedToList = new ArrayList<>(entry.getValue());
 			for (String s: convertedToList) {
 				if (s.equals(u.getUsername())) {
@@ -381,8 +365,13 @@ public class ChatBean implements ChatRemote {
 				try {
 					RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(sender, h, updatePackage, 0);
 				} catch(Exception e) {
-					//TODO Dodati ovde da se ponovo izvrsi
-					e.printStackTrace();
+					try {
+						e.printStackTrace();
+						System.out.println("[INFO] [INFORMING " + h.getIpAddress() + "] Informing host about users from this host - Second time");
+						RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(sender, h, updatePackage, 0);
+					} catch (Exception eSecond) {
+						eSecond.printStackTrace();
+					}
 				}
 			}
 		}

@@ -1,13 +1,6 @@
 package implementation;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -16,7 +9,6 @@ import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import DTO.HandshakeDTO;
 import models.Host;
 import models.UpdatePackage;
-import models.User;
 
 public class RestHostBuilder {
 	
