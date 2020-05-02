@@ -140,7 +140,7 @@ public class HostManagerBean {
 		String ipSlave = this.hostInfo.split(":")[1];
 		String portSlave = this.hostInfo.split(":")[2];
 		
-		Host masterHost = new Host(aliasMaster, ipMaster + ":" + portMaster);
+		Host masterHost = new Host(ipMaster + ":" + portMaster, ipMaster + ":" + portMaster);
 		this.hosts.put(masterHost.getIpAddress(), masterHost);
 		this.masterHost = masterHost;
 		
