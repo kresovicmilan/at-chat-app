@@ -71,7 +71,8 @@ public class ChatBean implements ChatRemote {
 		}
 		
 		for (Set<String> setOfForeignRegisteredUsers: hostManagerBean.getForeignRegisteredUsers().values()) {
-			for (String s: setOfForeignRegisteredUsers) {
+			List<String> convertedToList = new ArrayList<>(setOfForeignRegisteredUsers);
+			for (String s: convertedToList) {
 				if (s.equals(u.getUsername())) {
 					System.out.println("[REGISTER - FORBIDDEN] User already exist on another host");
 					return Response.status(400).entity("Username already exists").build();
