@@ -49,7 +49,7 @@ public class RestHostBuilder {
 		HandshakeDTO handshakeDTO = new HandshakeDTO();
     	handshakeDTO.setSender(sender);
     	handshakeDTO.setUpdatePackage(updatePackage);
-    	handshakeDTO.setHandshake(1);
+    	handshakeDTO.setHandshake(handshake);
     	
 		return rest.sendAllLoggedInUsersToNode(handshakeDTO);
 	}

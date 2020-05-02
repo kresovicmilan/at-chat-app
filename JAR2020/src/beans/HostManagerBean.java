@@ -17,6 +17,8 @@ import javax.ejb.LocalBean;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
+import com.google.gson.Gson;
+
 import implementation.RestHostBuilder;
 import models.Host;
 import models.UpdatePackage;
@@ -76,8 +78,10 @@ public class HostManagerBean {
 			System.out.println("[INFO] [NEW HOST] Fourth step - Receiving logged in users from other hosts");
 			try {
 				UpdatePackage newUpdatePackage = RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(this.currentSlaveHost, this.masterHost, new UpdatePackage(), 1);
-				System.out.println("[INFO] [NEW HOST] Fourth step - Received list of logged users with size: " + newUpdatePackage.getLoggedInUsers().size());
-				System.out.println("[INFO] [NEW HOST] Fourth step - Received set of registered users with size: " + newUpdatePackage.getRegisteredUsers().size());
+				foreignLoggedUsers = new Gson().fromJson(newUpdatePackage.getLoggedInUsers().get(0), Map.class);
+				System.out.println("[INFO] [NEW HOST] Fourth step - Received map of logged users");
+				foreignRegisteredUsers = new Gson().fromJson(newUpdatePackage.getRegisteredUsers().iterator().next(), Map.class);
+				System.out.println("[INFO] [NEW HOST] Fourth step - Received set of registered users");
 			} catch (Exception e) {
 				startAgain("Fourth");
 			}

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -103,30 +104,46 @@ public class HostService implements HostServiceRemote {
 		if (handshake == 1) {
 			System.out.println("[INFO] [MASTER] Fourth step - Received request from host: " + sender.getIpAddress());
 			UpdatePackage newUpdatePackage = new UpdatePackage();
+			Map<String, List<String>> loggedInUsersByHosts = new HashMap<>();
+			Map<String, Set<String>> registeredUsersByHosts = new HashMap<>();
+			List<String> loggedInUsernamesOnMaster = new ArrayList<>();
+			Set<String> registeredUsernamesOnMaster = new HashSet<>();
 			
 			//Logged in users directly from master
 			for (User u: storageBean.getLoggedInUsers().values()) {
-				newUpdatePackage.getLoggedInUsers().add(u.getUsername());
+				loggedInUsernamesOnMaster.add(u.getUsername());
 			}
-			System.out.println("[INFO] [MASTER] Fourth step - [DIRECTLY MASTER] Size of list of logged in users: " + newUpdatePackage.getLoggedInUsers().size());
+			loggedInUsersByHosts.put(hostManagerBean.getCurrentSlaveHost().getIpAddress(), loggedInUsernamesOnMaster);
+			System.out.println("[INFO] [MASTER] Fourth step - [DIRECTLY MASTER] Size of list of logged in users: " + loggedInUsernamesOnMaster.size());
 			
 			//Logged in users from other hosts
-			for (List<String> listOfLoggedInUsersFromOtherHost: hostManagerBean.getForeignLoggedUsers().values()) {
-				newUpdatePackage.getLoggedInUsers().addAll(listOfLoggedInUsersFromOtherHost);
+			for (Map.Entry<String, List<String>> entry : hostManagerBean.getForeignLoggedUsers().entrySet()) {
+			    if (!entry.getKey().equals(sender.getIpAddress())) {
+			    	loggedInUsersByHosts.put(entry.getKey(), entry.getValue());
+			    }
 			}
-			System.out.println("[INFO] [MASTER] Fourth step - [ALL] Size of list of logged in users: " + newUpdatePackage.getLoggedInUsers().size());
+			String jsonLoggedIn = new Gson().toJson(loggedInUsersByHosts);
+			System.out.println("[INFO] [MASTER] Fourth step - [ALL] Map of logged in users converted to JSON");
+			newUpdatePackage.getLoggedInUsers().add(jsonLoggedIn);
+			System.out.println("[INFO] [MASTER] Fourth step - [ALL] Map of logged in users added to package");
 			
 			//Registered users directly from master
 			for (User u: storageBean.getUsers().values()) {
-				newUpdatePackage.getRegisteredUsers().add(u.getUsername());
+				registeredUsernamesOnMaster.add(u.getUsername());
 			}
-			System.out.println("[INFO] [MASTER] Fourth step - [DIRECTLY MASTER] Size of set of registered users: " + newUpdatePackage.getRegisteredUsers().size());
+			registeredUsersByHosts.put(hostManagerBean.getCurrentSlaveHost().getIpAddress(), registeredUsernamesOnMaster);
+			System.out.println("[INFO] [MASTER] Fourth step - [DIRECTLY MASTER] Size of set of registered users: " + registeredUsernamesOnMaster.size());
 			
 			//Registered users from other hosts
-			for (Set<String> setOfRegisteredUsersFromOtherHost: hostManagerBean.getForeignRegisteredUsers().values()) {
-				newUpdatePackage.getRegisteredUsers().addAll(setOfRegisteredUsersFromOtherHost);
+			for (Map.Entry<String, Set<String>> entry : hostManagerBean.getForeignRegisteredUsers().entrySet()) {
+				if (!entry.getKey().equals(sender.getIpAddress())) {
+					registeredUsersByHosts.put(entry.getKey(), entry.getValue());
+				}
 			}
-			System.out.println("[INFO] [MASTER] Fourth step - [ALL] Size of set of registered users: " + newUpdatePackage.getRegisteredUsers().size());
+			String jsonRegistered = new Gson().toJson(registeredUsersByHosts);
+			System.out.println("[INFO] [MASTER] Fourth step - [ALL] Map of registered users converted to JSON");
+			newUpdatePackage.getRegisteredUsers().add(jsonRegistered);
+			System.out.println("[INFO] [MASTER] Fourth step - [ALL] Map of registered users added to package");
 			
 			System.out.println("[INFO] [MASTER] Fourth step - FINISHED");
 			return newUpdatePackage;
