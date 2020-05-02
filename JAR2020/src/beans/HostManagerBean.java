@@ -2,10 +2,13 @@ package beans;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -15,6 +18,7 @@ import javax.ejb.Startup;
 
 import implementation.RestHostBuilder;
 import models.Host;
+import models.UpdatePackage;
 import models.User;
 
 @Singleton
@@ -27,6 +31,8 @@ public class HostManagerBean {
 	private String hostInfo = "";
 	private Host masterHost = new Host();
 	private Host currentSlaveHost = new Host();
+	private Map<String, List<String>> foreignLoggedUsers = new HashMap<>();
+	private Map<String, Set<String>> foreignRegisteredUsers = new HashMap<>();
 	
 	@EJB
 	StorageBean storageBean;
@@ -46,17 +52,26 @@ public class HostManagerBean {
 				System.out.println("[INFO] Handshake started");
 				
 				System.out.println("[INFO] [NEW HOST] First step - Register to master: " + this.currentSlaveHost.getIpAddress());
+				System.out.println("[INFO] [NEW HOST] Second step - Master should send new host to other hosts");
 				RestHostBuilder.registerNodeBuilder(this.currentSlaveHost, this.masterHost);
 				System.out.println("[INFO] [NEW HOST] First step - FINISHED");
 				System.out.println("[INFO] [NEW HOST] Second step - FINISHED");
 				
 				System.out.println("[INFO] [NEW HOST] Third step - Receiving other host from master");
 				Collection<Host> otherHosts = RestHostBuilder.sendHostsToNewHostBuilder(this.currentSlaveHost, this.masterHost);
-				System.out.println("[INFO] [NEW HOST] Third step - Received other hosts from master with size: " + otherHosts.size());
+				System.out.println("[INFO] [NEW HOST] Third step - Received list of other hosts from master with size: " + otherHosts.size());
 				for (Host h: otherHosts) {
 					this.hosts.put(h.getIpAddress(), h);
 				}
 				System.out.println("[INFO] [NEW HOST] Third step - FINISHED");
+				
+				System.out.println("[INFO] [NEW HOST] Fourth step - Receiving logged in users from other hosts");
+				UpdatePackage newUpdatePackage = RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(this.currentSlaveHost, this.masterHost, null, true);
+				System.out.println("[INFO] [NEW HOST] Fourth step - Received list of logged users with size: " + newUpdatePackage.getLoggedInUsers().size());
+				System.out.println("[INFO] [NEW HOST] Fourth step - Received set of registered users with size: " + newUpdatePackage.getRegisteredUsers().size());
+				System.out.println("[INFO] [NEW HOST] Fourth step - FINISHED");
+				
+				System.out.println("[INFO] Handshake over - SUCCESS");
 				
 			}
 			
@@ -169,5 +184,24 @@ public class HostManagerBean {
 	public void setCurrentSlaveHost(Host currentSlaveHost) {
 		this.currentSlaveHost = currentSlaveHost;
 	}
+
+	public Map<String, List<String>> getForeignLoggedUsers() {
+		return foreignLoggedUsers;
+	}
+
+	public void setForeignLoggedUsers(Map<String, List<String>> foreignLoggedUsers) {
+		this.foreignLoggedUsers = foreignLoggedUsers;
+	}
+
+	public Map<String, Set<String>> getForeignRegisteredUsers() {
+		return foreignRegisteredUsers;
+	}
+
+	public void setForeignRegisteredUsers(Map<String, Set<String>> foreignRegisteredUsers) {
+		this.foreignRegisteredUsers = foreignRegisteredUsers;
+	}
+	
+	
+	
 
 }

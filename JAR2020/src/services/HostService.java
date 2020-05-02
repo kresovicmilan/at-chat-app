@@ -2,8 +2,10 @@ package services;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
@@ -22,6 +24,8 @@ import beans.HostManagerBean;
 import beans.StorageBean;
 import implementation.RestHostBuilder;
 import models.Host;
+import models.UpdatePackage;
+import models.User;
 
 @Stateless
 @Remote(HostServiceRemote.class)
@@ -41,7 +45,7 @@ public class HostService implements HostServiceRemote {
 		
         if (!hostManagerBean.getHosts().containsKey(newHost.getIpAddress())) {
         	hostManagerBean.getHosts().put(newHost.getIpAddress(), newHost);
-        	System.out.println("[INFO] [MASTER] First step - FINISHED" + newHost.getIpAddress());
+        	System.out.println("[INFO] [MASTER] First step - FINISHED");
         	
         	System.out.println("[INFO] [MASTER] Second step - Send new host to other hosts");
         	for (Host h: hostManagerBean.getHosts().values()) {
@@ -78,6 +82,48 @@ public class HostService implements HostServiceRemote {
         System.out.println("[INFO] [MASTER] Third step - FINISHED");
         return otherHosts;
     }
+
+    @Override
+	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage, Boolean isHandshake) {
+		if (isHandshake) {
+			System.out.println("[INFO] [MASTER] Fourth step - Received request from host: " + sender.getIpAddress());
+			UpdatePackage newUpdatePackage = new UpdatePackage();
+			
+			//Logged in users directly from master
+			for (User u: storageBean.getLoggedInUsers().values()) {
+				newUpdatePackage.getLoggedInUsers().add(u.getUsername());
+			}
+			System.out.println("[INFO] [MASTER] Fourth step - [DIRECTLY MASTER] Size of list of logged in users: " + newUpdatePackage.getLoggedInUsers().size());
+			
+			//Logged in users from other hosts
+			for (List<String> listOfLoggedInUsersFromOtherHost: hostManagerBean.getForeignLoggedUsers().values()) {
+				newUpdatePackage.getLoggedInUsers().addAll(listOfLoggedInUsersFromOtherHost);
+			}
+			System.out.println("[INFO] [MASTER] Fourth step - [ALL] Size of list of logged in users: " + newUpdatePackage.getLoggedInUsers().size());
+			
+			//Registered users directly from master
+			for (User u: storageBean.getUsers().values()) {
+				newUpdatePackage.getRegisteredUsers().add(u.getUsername());
+			}
+			System.out.println("[INFO] [MASTER] Fourth step - [DIRECTLY MASTER] Size of set of registered users: " + newUpdatePackage.getRegisteredUsers().size());
+			
+			//Registered users from other hosts
+			for (Set<String> setOfRegisteredUsersFromOtherHost: hostManagerBean.getForeignRegisteredUsers().values()) {
+				newUpdatePackage.getRegisteredUsers().addAll(setOfRegisteredUsersFromOtherHost);
+			}
+			System.out.println("[INFO] [MASTER] Fourth step - [ALL] Size of set of registered users: " + newUpdatePackage.getRegisteredUsers().size());
+			
+			System.out.println("[INFO] [MASTER] Fourth step - FINISHED");
+			return newUpdatePackage;
+			
+		} else {
+			System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Got an user update from host: " + sender.getIpAddress());
+			hostManagerBean.getForeignLoggedUsers().put(sender.getIpAddress(), updatePackage.getLoggedInUsers());
+			hostManagerBean.getForeignRegisteredUsers().put(sender.getIpAddress(), updatePackage.getRegisteredUsers());
+			
+			return updatePackage;
+		}
+	}
 
     /*@POST
     @Path("/users/loggedIn")

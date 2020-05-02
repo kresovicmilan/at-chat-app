@@ -14,6 +14,8 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 
 import models.Host;
+import models.UpdatePackage;
+import models.User;
 
 public class RestHostBuilder {
 	
@@ -31,11 +33,17 @@ public class RestHostBuilder {
 		rest.sendNewHostToHost(newHost);
 	}
 	
-	
 	public static Collection<Host> sendHostsToNewHostBuilder(Host currentSlaveHost, Host masterHost) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
 		ResteasyWebTarget target = client.target("http://" + masterHost.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
 		return rest.sendHostsToNewHost(currentSlaveHost);
+	}
+	
+	public static UpdatePackage sendAllLoggedInUsersToNodeBuilder(Host sender, Host receiver, UpdatePackage updatePackage, Boolean isHandshake) {
+		ResteasyClient client = new ResteasyClientBuilder().build();
+		ResteasyWebTarget target = client.target("http://" + receiver.getIpAddress() + "/WAR2020/rest/host");
+		RestAPI rest = target.proxy(RestAPI.class);
+		return rest.sendAllLoggedInUsersToNode(sender, updatePackage, isHandshake);
 	}
 }

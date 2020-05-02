@@ -15,6 +15,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import models.Host;
+import models.UpdatePackage;
+import models.User;
 
 public interface RestAPI {
 	@POST
@@ -33,17 +35,14 @@ public interface RestAPI {
     @Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
     public Collection<Host> sendHostsToNewHost(Host newHost);
-    
-    
-    /*@POST
-    @Path("/nodes")
-    public String notifyNode();
 
-    @POST
+	@POST
     @Path("/users/loggedin")
-    public String sendAllLoggedInUsersToNewNode();
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage, Boolean isHandshake);
 
-    @DELETE
+    /*@DELETE
     @Path("/node/{alias}")
     public Response removeNode(@PathParam("alias") String alias);
 

@@ -1,6 +1,7 @@
 package services;
 
 import java.util.Collection;
+import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -9,6 +10,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import models.Host;
+import models.UpdatePackage;
+import models.User;
 
 public interface HostServiceRemote {
 	
@@ -27,4 +30,10 @@ public interface HostServiceRemote {
     @Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
     public Collection<Host> sendHostsToNewHost(Host newHost);
+	
+	@POST
+    @Path("/users/loggedin")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+	public UpdatePackage sendAllLoggedInUsersToNode(Host sender, UpdatePackage updatePackage, Boolean isHandshake);
 }
