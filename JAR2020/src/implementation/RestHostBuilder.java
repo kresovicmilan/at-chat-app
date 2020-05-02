@@ -31,11 +31,11 @@ public class RestHostBuilder {
 		rest.sendNewHostToHost(newHost);
 	}
 	
-	public static void sendHostsToNewHostBuilder(String receivingHostIp, Collection<Host> otherHosts) {
-		System.out.println("Usao u sendHostToNewHostBuilder");
+	
+	public static Collection<Host> sendHostsToNewHostBuilder(Host currentSlaveHost, Host masterHost) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
-		ResteasyWebTarget target = client.target("http://" + receivingHostIp + "/WAR2020/rest/nodes");
+		ResteasyWebTarget target = client.target("http://" + masterHost.getIpAddress() + "/WAR2020/rest/nodes");
 		RestAPI rest = target.proxy(RestAPI.class);
-		rest.sendHostsToNewHost(otherHosts);
+		return rest.sendHostsToNewHost(currentSlaveHost);
 	}
 }

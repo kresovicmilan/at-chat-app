@@ -1,11 +1,13 @@
 package services;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
+import javax.ejb.Remote;
 import javax.ejb.Stateless;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -16,63 +18,68 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import beans.ManagerBean;
+import beans.HostManagerBean;
+import beans.StorageBean;
 import implementation.RestHostBuilder;
 import models.Host;
 
 @Stateless
+@Remote(HostServiceRemote.class)
 @Path("/host")
 @LocalBean
-public class HostService {
+public class HostService implements HostServiceRemote {
 	
 	@EJB
-	ManagerBean managerBean;
+	StorageBean storageBean;
 	
-	@POST
-    @Path("/register")
-    @Consumes(MediaType.APPLICATION_JSON)
+	@EJB
+	HostManagerBean hostManagerBean;
+	
+	@Override
     public void registerNode(Host newHost) {
-		System.out.println("Master primio " + newHost.getAlias() + ":" + newHost.getIpAddress());
-        if (!managerBean.getHosts().containsKey(newHost.getIpAddress())) {
-        	managerBean.getHosts().put(newHost.getIpAddress(), newHost);
+		System.out.println("[INFO] [MASTER] First step - Master recieved registration from: " + newHost.getIpAddress());
+		
+        if (!hostManagerBean.getHosts().containsKey(newHost.getIpAddress())) {
+        	hostManagerBean.getHosts().put(newHost.getIpAddress(), newHost);
+        	System.out.println("[INFO] [MASTER] First step - FINISHED" + newHost.getIpAddress());
         	
-        	for (Host h: managerBean.getHosts().values()) {
-        		if ((!h.getIpAddress().equals(newHost.getIpAddress())) && (!h.getIpAddress().equals(managerBean.getMasterHost().getIpAddress()))) {
-        			System.out.println("Poslao new host " + newHost.getIpAddress() + " Na server " + h.getIpAddress());
+        	System.out.println("[INFO] [MASTER] Second step - Send new host to other hosts");
+        	for (Host h: hostManagerBean.getHosts().values()) {
+        		if ((!h.getIpAddress().equals(newHost.getIpAddress())) && (!h.getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress()))) {
         			RestHostBuilder.sendNewHostToHostBuilder(h.getIpAddress(), newHost);
+        			System.out.println("[INFO] [MASTER] Second step - Sent to: " + h.getIpAddress());
         		}
         	}
         	
-        	System.out.println("Master poslao ostale hostove na " + newHost.getAlias() + ":" + newHost.getIpAddress());
-        	RestHostBuilder.sendHostsToNewHostBuilder(newHost.getIpAddress(), managerBean.getHosts().values());
+        	System.out.println("[INFO] [MASTER] Second step - FINISHED");
         }
     }
 
 
-    @POST
-    @Path("/node")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Override
     public void sendNewHostToHost(Host newHost) {
-        if (!managerBean.getHosts().containsKey(newHost.getIpAddress())) {
-        	System.out.println("Primio novi host " + newHost.getIpAddress());
-        	managerBean.getHosts().put(newHost.getIpAddress(), newHost);
+        if (!hostManagerBean.getHosts().containsKey(newHost.getIpAddress())) {
+        	hostManagerBean.getHosts().put(newHost.getIpAddress(), newHost);
+        	System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Received new host: " + newHost.getIpAddress());
         }
     }
 
-    @POST
-    @Path("/nodes")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void sendHostsToNewHost(Collection<Host> otherHosts) {
-    	System.out.println("Usao da doda nove hostove");
-        for(Host h: otherHosts) {
-        	if ((!h.getIpAddress().equals(managerBean.getCurrentSlaveHost().getIpAddress())) && (!h.getIpAddress().equals(managerBean.getMasterHost().getIpAddress()))) {
-        		System.out.println("Dodao " + h.getIpAddress());
-        		managerBean.getHosts().put(h.getIpAddress(), h);
+    @Override
+    public Collection<Host> sendHostsToNewHost(Host newHost) {
+    	System.out.println("[INFO] [MASTER] Third step - Received request from host: " + newHost.getIpAddress());
+    	List<Host> otherHosts = new ArrayList<Host>();
+        for(Host h: hostManagerBean.getHosts().values()) {
+        	if ((!h.getIpAddress().equals(newHost.getIpAddress())) && (!h.getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress()))) {
+        		otherHosts.add(h);
         	}
         }
+        
+        System.out.println("[INFO] [MASTER] Third step - Sending list of other host with size: " + otherHosts.size());
+        System.out.println("[INFO] [MASTER] Third step - FINISHED");
+        return otherHosts;
     }
 
-    @POST
+    /*@POST
     @Path("/users/loggedIn")
     public String sendAllLoggedInUsersToNewNode() {
         System.out.println("NOVOM CVORU SE SALJU SVI ULOGOVANI KORISNICI");
@@ -82,7 +89,7 @@ public class HostService {
     @DELETE
     @Path("/node/{alias}")
     public Response removeNode(@PathParam("alias") String alias) {
-        managerBean.getHosts().remove(alias);
+    	hostManagerBean.getHosts().remove(alias);
         return Response.status(200).entity("Host is registered").build();
     }
 
@@ -91,5 +98,5 @@ public class HostService {
     public String heartbeat() {
         System.out.println("PERIODICNO PROVERAVAJ DA LI SU SVI CVOROVI AKTIVNI");
         return "OK";
-    }
+    }*/
 }

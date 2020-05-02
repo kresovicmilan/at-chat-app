@@ -2,13 +2,8 @@ package beans;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
@@ -23,7 +18,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 
 import com.google.gson.Gson;
 
@@ -41,7 +35,7 @@ public class ChatBean implements ChatRemote {
 	//private Map<String, User> loggedInUsers = new HashMap<String, User>();
 	
 	@EJB
-	ManagerBean storageBean;
+	StorageBean storageBean;
 	
 	@EJB
 	WSEndPoint ws;

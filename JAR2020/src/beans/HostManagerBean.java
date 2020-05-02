@@ -1,17 +1,8 @@
 package beans;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.Enumeration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -21,9 +12,6 @@ import javax.ejb.EJB;
 import javax.ejb.LocalBean;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 import implementation.RestHostBuilder;
 import models.Host;
@@ -32,32 +20,48 @@ import models.User;
 @Singleton
 @LocalBean
 @Startup
-public class ManagerBean {
+public class HostManagerBean {
 	
-	private Map<String, User> users;
-	private Map<String, User> loggedInUsers;
-	private Map<String, Host> hosts;
-	private String masterInfo;
-	private String hostInfo;
-	private Host masterHost;
-	private Host currentSlaveHost;
+	private Map<String, Host> hosts = new HashMap<>();
+	private String masterInfo = "";
+	private String hostInfo = "";
+	private Host masterHost = new Host();
+	private Host currentSlaveHost = new Host();
 	
-	public ManagerBean() {
-		this.users = new HashMap<String, User>();
-		this.loggedInUsers = new HashMap<String, User>();
-		this.hosts = new HashMap<String, Host>();
-		
-		findMasterIpAddress();
-		setHosts();
-	}
+	@EJB
+	StorageBean storageBean;
 	
 	@PostConstruct
 	public void handshakeInit() {
-		System.out.println("Krenuo handshake i master je " + masterHost.getIpAddress());
+		System.out.println("[INFO] Setting up the server");
 		
-		if (!masterHost.equals(currentSlaveHost)) {
-			System.out.println("Poslao masteru " + hostInfo);
-			RestHostBuilder.registerNodeBuilder(this.currentSlaveHost, this.masterHost);
+		findMasterIpAddress();
+		setHosts();
+		
+		System.out.println("[INFO] Master IP: " + this.masterHost.getIpAddress());
+		System.out.println("[INFO] Slave host IP: " + this.currentSlaveHost.getIpAddress());
+		
+		try {
+			if (!masterHost.equals(currentSlaveHost)) {
+				System.out.println("[INFO] Handshake started");
+				
+				System.out.println("[INFO] [NEW HOST] First step - Register to master: " + this.currentSlaveHost.getIpAddress());
+				RestHostBuilder.registerNodeBuilder(this.currentSlaveHost, this.masterHost);
+				System.out.println("[INFO] [NEW HOST] First step - FINISHED");
+				System.out.println("[INFO] [NEW HOST] Second step - FINISHED");
+				
+				System.out.println("[INFO] [NEW HOST] Third step - Receiving other host from master");
+				Collection<Host> otherHosts = RestHostBuilder.sendHostsToNewHostBuilder(this.currentSlaveHost, this.masterHost);
+				System.out.println("[INFO] [NEW HOST] Third step - Received other hosts from master with size: " + otherHosts.size());
+				for (Host h: otherHosts) {
+					this.hosts.put(h.getIpAddress(), h);
+				}
+				System.out.println("[INFO] [NEW HOST] Third step - FINISHED");
+				
+			}
+			
+		} catch(Exception e) {
+			e.printStackTrace();
 		}
 		
 	}
@@ -117,23 +121,7 @@ public class ManagerBean {
 		this.hostInfo = hostIp;
 		
 	}
-
-	public Map<String, User> getUsers() {
-		return users;
-	}
-
-	public void setUsers(Map<String, User> users) {
-		this.users = users;
-	}
-
-	public Map<String, User> getLoggedInUsers() {
-		return loggedInUsers;
-	}
-
-	public void setLoggedInUsers(Map<String, User> loggedInUsers) {
-		this.loggedInUsers = loggedInUsers;
-	}
-
+	
 	public Map<String, Host> getHosts() {
 		return hosts;
 	}
@@ -181,5 +169,5 @@ public class ManagerBean {
 	public void setCurrentSlaveHost(Host currentSlaveHost) {
 		this.currentSlaveHost = currentSlaveHost;
 	}
-	
+
 }
