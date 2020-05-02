@@ -42,6 +42,10 @@ public interface RestAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
 	public UpdatePackage sendAllLoggedInUsersToNode(HandshakeDTO handshakeDTO);
+	
+	@DELETE
+    @Path("/node/{alias}")
+    public void deleteHost(@PathParam("alias") String alias);
 
     /*@DELETE
     @Path("/node/{alias}")

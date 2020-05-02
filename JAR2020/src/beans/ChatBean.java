@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
@@ -22,7 +23,10 @@ import javax.ws.rs.core.Response;
 import com.google.gson.Gson;
 
 import DTO.MessageDTO;
+import implementation.RestHostBuilder;
+import models.Host;
 import models.Message;
+import models.UpdatePackage;
 import models.User;
 import ws.WSEndPoint;
 
@@ -33,6 +37,9 @@ public class ChatBean implements ChatRemote {
 	
 	//private Map<String, User> users = new HashMap<String, User>();
 	//private Map<String, User> loggedInUsers = new HashMap<String, User>();
+	
+	@EJB
+	HostManagerBean hostManagerBean;
 	
 	@EJB
 	StorageBean storageBean;
@@ -63,9 +70,22 @@ public class ChatBean implements ChatRemote {
 			}
 		}
 		
+		for (Set<String> setOfForeignRegisteredUsers: hostManagerBean.getForeignRegisteredUsers().values()) {
+			for (String s: setOfForeignRegisteredUsers) {
+				if (s.equals(u.getUsername())) {
+					System.out.println("[REGISTER - FORBIDDEN] User already exist on another host");
+					return Response.status(400).entity("Username already exists").build();
+				}
+			}
+		}
+		
 		storageBean.getLoggedInUsers().put(u.getUsername(), u);
 		storageBean.getUsers().put(u.getUsername(), u);
 		System.out.println("[REGISTER - SUCCESSFUL] User registered and logged in");
+		
+		//Informing hosts about new registered and logged in users
+		sendNewPackageToAllHosts();
+		
 		return Response.status(200).entity("User registered and logged in").build();
     }
 	
@@ -81,6 +101,10 @@ public class ChatBean implements ChatRemote {
 			if (userSpecific.getUsername().equals(u.getUsername()) && userSpecific.getPassword().equals(u.getPassword())) {
 				storageBean.getLoggedInUsers().put(u.getUsername(), u);
 				System.out.println("[LOGIN - SUCCESSFUL] User logged in");
+				
+				//Informing hosts about new registered and logged in users
+				sendNewPackageToAllHosts();
+				
 				return Response.status(200).entity("User credentials are correct").build();
 			}
 		}
@@ -102,11 +126,18 @@ public class ChatBean implements ChatRemote {
 				if (userSpecific.getUsername().equals(username)) {
 					storageBean.getLoggedInUsers().remove(userSpecific.getUsername());
 					System.out.println("[LOGOUT - SUCCESSFUL] User logged out");
+					
+					//Informing hosts about new registered and logged in users
+					sendNewPackageToAllHosts();
+					
 					return Response.status(200).entity("User is logged out").build();
 				}
 			}
 		} else {
 			System.out.println("[LOGOUT - SUCCESSFUL] User logged out");
+			
+			//Don't need to inform other hosts because there wasn't any changes in storage
+			
 			return Response.status(200).entity("User is logged out").build();
 		}
 		
@@ -120,10 +151,17 @@ public class ChatBean implements ChatRemote {
 	public List<String> getRegistered() {
 		System.out.println("---- ALL REGISTERED USERS ----");
 		List<String> usernames = new ArrayList();
+		
 		for(User u: storageBean.getUsers().values()) {
 			System.out.println(u.getUsername());
 			usernames.add(u.getUsername());
 		}
+		
+		System.out.println("- On other hosts -");
+		for (Set<String> setOfForeignRegisteredUsers: hostManagerBean.getForeignRegisteredUsers().values()) {
+    		usernames.addAll(new ArrayList<String>(setOfForeignRegisteredUsers));
+    		System.out.println(setOfForeignRegisteredUsers);
+    	}
 
 		return usernames;
 	}
@@ -135,10 +173,17 @@ public class ChatBean implements ChatRemote {
 		System.out.println("---- ALL LOGGED IN USERS ----");
 		List<String> activeUsers = new ArrayList<>(ws.getUserSessions().keySet());
 		List<String> usernames = new ArrayList();
+		
 		for(User u: storageBean.getLoggedInUsers().values()) {
 			System.out.println(u.getUsername());
 			usernames.add(u.getUsername());
 		}
+		
+		System.out.println("- On other hosts -");
+		for (List<String> listOfForeignLoggedInUsers: hostManagerBean.getForeignLoggedUsers().values()) {
+    		usernames.addAll(listOfForeignLoggedInUsers);
+    		System.out.println(listOfForeignLoggedInUsers);
+    	}
 
 		return usernames;
 	}
@@ -297,6 +342,35 @@ public class ChatBean implements ChatRemote {
 		
 		return "OK";
 	}*/
+	
+	public void sendNewPackageToAllHosts() {
+		System.out.println("[INFO] [INFORMING HOSTS] Informing other host about users from this host");
+		UpdatePackage updatePackage = new UpdatePackage();
+		String currentHostIp = hostManagerBean.getCurrentSlaveHost().getIpAddress();
+		
+		for (User u: storageBean.getLoggedInUsers().values()) {
+			updatePackage.getLoggedInUsers().add(u.getUsername());
+		}
+		
+		for (User u: storageBean.getUsers().values()) {
+			updatePackage.getRegisteredUsers().add(u.getUsername());
+		}
+		
+		Host sender = hostManagerBean.getCurrentSlaveHost();
+		
+		for (Host h: hostManagerBean.getHosts().values()) {
+			if(!h.getIpAddress().equals(currentHostIp)) {
+				try {
+					RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(sender, h, updatePackage, 0);
+				} catch(Exception e) {
+					//TODO Dodati ovde da se ponovo izvrsi
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		System.out.println("[INFO] [INFORMING HOSTS] Other hosts are informed of users from this node");
+	}
 	
 	static public class Msg {
 		public String senderUsername;

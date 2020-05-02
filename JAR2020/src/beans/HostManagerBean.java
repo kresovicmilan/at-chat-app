@@ -11,6 +11,7 @@ import java.util.Scanner;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
 import javax.ejb.Singleton;
@@ -47,38 +48,83 @@ public class HostManagerBean {
 		System.out.println("[INFO] Master IP: " + this.masterHost.getIpAddress());
 		System.out.println("[INFO] Slave host IP: " + this.currentSlaveHost.getIpAddress());
 		
-		try {
-			if (!masterHost.equals(currentSlaveHost)) {
-				System.out.println("[INFO] Handshake started");
-				
-				System.out.println("[INFO] [NEW HOST] First step - Register to master: " + this.currentSlaveHost.getIpAddress());
-				System.out.println("[INFO] [NEW HOST] Second step - Master should send new host to other hosts");
+		if (!masterHost.equals(currentSlaveHost)) {
+			System.out.println("[INFO] Handshake started");
+			
+			System.out.println("[INFO] [NEW HOST] First step - Register to master: " + this.currentSlaveHost.getIpAddress());
+			System.out.println("[INFO] [NEW HOST] Second step - Master should send new host to other hosts");
+			try {
 				RestHostBuilder.registerNodeBuilder(this.currentSlaveHost, this.masterHost);
-				System.out.println("[INFO] [NEW HOST] First step - FINISHED");
-				System.out.println("[INFO] [NEW HOST] Second step - FINISHED");
-				
-				System.out.println("[INFO] [NEW HOST] Third step - Receiving other host from master");
+			} catch (Exception e) {
+				startAgain("First");
+			}
+			System.out.println("[INFO] [NEW HOST] First step - FINISHED");
+			System.out.println("[INFO] [NEW HOST] Second step - FINISHED");
+			
+			System.out.println("[INFO] [NEW HOST] Third step - Receiving other host from master");
+			try {
 				Collection<Host> otherHosts = RestHostBuilder.sendHostsToNewHostBuilder(this.currentSlaveHost, this.masterHost);
 				System.out.println("[INFO] [NEW HOST] Third step - Received list of other hosts from master with size: " + otherHosts.size());
 				for (Host h: otherHosts) {
 					this.hosts.put(h.getIpAddress(), h);
 				}
-				System.out.println("[INFO] [NEW HOST] Third step - FINISHED");
-				
-				System.out.println("[INFO] [NEW HOST] Fourth step - Receiving logged in users from other hosts");
+			} catch (Exception e) {
+				startAgain("Third");
+			}
+			System.out.println("[INFO] [NEW HOST] Third step - FINISHED");
+			
+			System.out.println("[INFO] [NEW HOST] Fourth step - Receiving logged in users from other hosts");
+			try {
 				UpdatePackage newUpdatePackage = RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(this.currentSlaveHost, this.masterHost, new UpdatePackage(), 1);
 				System.out.println("[INFO] [NEW HOST] Fourth step - Received list of logged users with size: " + newUpdatePackage.getLoggedInUsers().size());
 				System.out.println("[INFO] [NEW HOST] Fourth step - Received set of registered users with size: " + newUpdatePackage.getRegisteredUsers().size());
-				System.out.println("[INFO] [NEW HOST] Fourth step - FINISHED");
-				
-				System.out.println("[INFO] Handshake over - SUCCESS");
-				
+			} catch (Exception e) {
+				startAgain("Fourth");
 			}
+			System.out.println("[INFO] [NEW HOST] Fourth step - FINISHED");
 			
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
+			System.out.println("[INFO] Handshake over - SUCCESS");
+			
+		}	
 		
+	}
+	
+	@PreDestroy
+	public void shutDownHost() {
+		System.out.println("[SHUTDOWN] Shutting down the host");
+		System.out.println("[SHUTDOWN] Deleting host from master");
+		RestHostBuilder.deleteHostBuilder(this.masterHost, this.currentSlaveHost);
+		System.out.println("[SHUTDOWN] Host deleted from master");
+	}
+	
+	public void startAgain(String err) {
+		try {
+			System.out.println("[INFO] " + err + "step retrying");
+			switch(err) {
+				case "First":
+					System.out.println("[INFO] [NEW HOST] First step - Register to master: " + this.currentSlaveHost.getIpAddress());
+					System.out.println("[INFO] [NEW HOST] Second step - Master should send new host to other hosts");
+					RestHostBuilder.registerNodeBuilder(this.currentSlaveHost, this.masterHost);
+					break;
+				case "Third":
+					Collection<Host> otherHosts = RestHostBuilder.sendHostsToNewHostBuilder(this.currentSlaveHost, this.masterHost);
+					System.out.println("[INFO] [NEW HOST] Third step - Received list of other hosts from master with size: " + otherHosts.size());
+					for (Host h: otherHosts) {
+						this.hosts.put(h.getIpAddress(), h);
+					}
+					break;
+				case "Fourth":
+					UpdatePackage newUpdatePackage = RestHostBuilder.sendAllLoggedInUsersToNodeBuilder(this.currentSlaveHost, this.masterHost, new UpdatePackage(), 1);
+					System.out.println("[INFO] [NEW HOST] Fourth step - Received list of logged users with size: " + newUpdatePackage.getLoggedInUsers().size());
+					System.out.println("[INFO] [NEW HOST] Fourth step - Received set of registered users with size: " + newUpdatePackage.getRegisteredUsers().size());
+					break;
+			}	
+		} catch (Exception e) {
+			System.out.println("[INFO] [ERROR] Some error has occured in " + err.toLowerCase() + " step");
+			System.out.println("[INFO] [ERROR] Deleting host from master");
+			RestHostBuilder.deleteHostBuilder(this.masterHost, this.currentSlaveHost);
+			System.out.println("[INFO] [ERROR] Host deleted from master");
+		}
 	}
 	
 	public void setHosts() {
