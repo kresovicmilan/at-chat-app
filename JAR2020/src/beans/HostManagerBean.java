@@ -107,7 +107,7 @@ public class HostManagerBean {
 		System.out.println("[SHUTDOWN] Host deleted from master");
 	}
 	
-	@Schedule(hour="*", minute = "*", second = "*/15", info = "Every 15 seconds")
+	@Schedule(hour="*", minute = "*", second = "*/60", info = "Every 60 seconds")
 	public void heartbeatProtocol() {
 		System.out.println("[INFO] [HEARTBEAT] Starting");
 		
