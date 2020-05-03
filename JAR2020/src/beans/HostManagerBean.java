@@ -24,6 +24,7 @@ import implementation.RestHostBuilder;
 import models.Host;
 import models.UpdatePackage;
 import models.User;
+import services.HostService;
 
 @Singleton
 @LocalBean
@@ -40,6 +41,9 @@ public class HostManagerBean {
 	
 	@EJB
 	StorageBean storageBean;
+	
+	@EJB
+	HostService hostService;
 	
 	@PostConstruct
 	public void handshakeInit() {
@@ -125,7 +129,7 @@ public class HostManagerBean {
 				
 				if (succ != 1) {
 					System.out.println("[INFO] [HEARTBEAT] Deleting host {" + h.getIpAddress() + "} from current host");
-					RestHostBuilder.deleteHostBuilder(this.currentSlaveHost, h, this.currentSlaveHost);
+					deleteHostFromCurrentHost(h.getIpAddress());
 					System.out.println("[INFO] [HEARTBEAT] Host deleted {" + h.getIpAddress() + "} from current host");
 					System.out.println("[INFO] [HEARTBEAT] Deleting host {" + h.getIpAddress() + "} from other hosts");
 					RestHostBuilder.deleteHostBuilder(this.masterHost, h, this.currentSlaveHost);
@@ -230,6 +234,16 @@ public class HostManagerBean {
 			newMap.put(entry.getKey(), new HashSet<String>(entry.getValue()));
 		}
 		foreignRegisteredUsers = newMap;
+	}
+	
+	public void deleteHostFromCurrentHost(String hostIp) {
+		this.foreignLoggedUsers.remove(hostIp);
+		this.foreignRegisteredUsers.remove(hostIp);
+		System.out.println("[DELETE] [" + currentSlaveHost.getIpAddress() + "] Host {" + hostIp + "} is removed");
+		
+		hostService.updateUsersInSocket();
+		
+		hostService.purgeMessages(hostIp);
 	}
 	
 	public Map<String, Host> getHosts() {
