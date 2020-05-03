@@ -113,6 +113,16 @@ public class ChatBean implements ChatRemote {
 			}
 		}
 		
+		for (Map.Entry<String, Set<String>> entry : hostManagerBean.getForeignRegisteredUsers().entrySet()) {
+			List<String> convertedToList = new ArrayList<>(entry.getValue());
+			for (String s: convertedToList) {
+				if (s.equals(u.getUsername())) {
+					System.out.println("[LOGIN - ANOTHER HOST] User is on another host");
+					return Response.status(400).entity(entry.getKey()).build();
+				}
+			}
+		}
+		
 		System.out.println("[LOGIN - FORBIDDEN] User credentals are incorrect");
 		return Response.status(400).entity("User credentials are incorrect").build();
     }
@@ -412,7 +422,6 @@ public class ChatBean implements ChatRemote {
 		System.out.println("[INFO] All messages are displayed");
 		return messagesDTO;
 	}
-	
 	
 	@GET
 	@Path("/test")

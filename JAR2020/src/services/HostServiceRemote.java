@@ -43,7 +43,7 @@ public interface HostServiceRemote {
 	@DELETE
     @Path("/node/{alias}")
 	@Consumes(MediaType.APPLICATION_JSON)
-    public void deleteHost(@PathParam("alias") String alias, String sendingIp);
+    public void deleteHost(@PathParam("alias") String alias);
 	
 	@POST
     @Path("/message")
@@ -54,4 +54,9 @@ public interface HostServiceRemote {
 	@Path("/node")
 	@Produces(MediaType.APPLICATION_JSON)
     public int checkIfAlive();
+	
+	@DELETE
+    @Path("/node/specific/{alias}")
+	@Consumes(MediaType.APPLICATION_JSON)
+    public void deleteFromSpecificHost(@PathParam("alias") String alias);
 }

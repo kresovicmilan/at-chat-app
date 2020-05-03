@@ -155,7 +155,7 @@ public class HostService implements HostServiceRemote {
 	}
     
     @Override
-    public void deleteHost(@PathParam("alias") String alias, String sendingIp) {
+    public void deleteHost(@PathParam("alias") String alias) {
     	System.out.println("[DELETE] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Deleting host: " + alias);
     	Host deletedHost = hostManagerBean.getHosts().remove(alias);
 		if (deletedHost != null) {
@@ -169,9 +169,9 @@ public class HostService implements HostServiceRemote {
 			
 			if (hostManagerBean.getCurrentSlaveHost().getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress())) {
 	    		for (Host h: hostManagerBean.getHosts().values()) {
-	    			if ((!h.getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress())) && (!h.getIpAddress().equals(sendingIp))) {
+	    			if (!h.getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress())) {
 	    				System.out.println("[DELETE] [MASTER] Deleting {" + alias + "} from {" + h.getAlias() + "}");
-	    				RestHostBuilder.deleteHostBuilder(h, deletedHost, hostManagerBean.getMasterHost());
+	    				RestHostBuilder.deleteHostBuilder(h, deletedHost);
 	    			}
 	    		}
 	    		System.out.println("[DELETE] [MASTER] All other host are purged from {" + alias + "}");
@@ -202,6 +202,21 @@ public class HostService implements HostServiceRemote {
     @Override
     public int checkIfAlive() {
     	return 1;
+    }
+    
+    @Override
+    public void deleteFromSpecificHost(@PathParam("alias") String alias) {
+    	System.out.println("[DELETE] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Deleting host: " + alias);
+    	Host deletedHost = hostManagerBean.getHosts().remove(alias);
+		if (deletedHost != null) {
+			hostManagerBean.getForeignLoggedUsers().remove(alias);
+			hostManagerBean.getForeignRegisteredUsers().remove(alias);
+			System.out.println("[DELETE] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Host {" + alias + "} is removed");
+			
+			updateUsersInSocket();
+			
+			purgeMessages(alias);
+		}
     }
     
     public void updateUsersInSocket() {

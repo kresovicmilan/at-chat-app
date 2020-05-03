@@ -30,14 +30,39 @@ $(document).ready(function() {
 			contentType: "application/json",
 			success: function(data) {
                 sessionStorage.setItem('username', username);
+                sessionStorage.setItem('host', "");
+                sessionStorage.setItem('hostIp', "");
                 window.location.href='./home.html';
                 return;
             },
             error: function(err) {
-                var div = document.getElementById('showMessage');
-				div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Incorrect username or password</div>';
-				document.getElementById('inputUsername').value = '';
-				document.getElementById('inputPassword').value = '';
+            	console.log(err);
+            	if (err !== "User credentials are incorrect") {
+	            	$.ajax({
+						url: "http://" + err + "WAR2020/rest/chat/users/login/",
+						type: "POST",
+						data: JSON.stringify({"username":username, "password":password}),
+						contentType: "application/json",
+						success: function(dataSecond) {
+			                sessionStorage.setItem('username', username);
+			                sessionStorage.setItem('host', "http://" + err + "/WAR2020/");
+			                sessionStorage.setItem('hostIp', err + "/WAR2020/");
+			                window.location.href='./home.html';
+			                return;
+			            },
+			            error: function(errSecond) {
+			                var div = document.getElementById('showMessage');
+							div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Incorrect username or password</div>';
+							document.getElementById('inputUsername').value = '';
+							document.getElementById('inputPassword').value = '';
+			            }	
+					});
+            	} else {
+	            	var div = document.getElementById('showMessage');
+					div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Incorrect username or password</div>';
+					document.getElementById('inputUsername').value = '';
+					document.getElementById('inputPassword').value = '';
+				}
             }	
 		});
 	});

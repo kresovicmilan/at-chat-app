@@ -30,6 +30,8 @@ $(document).ready(function() {
 			contentType: "application/json",
 			success: function(data) {
                 sessionStorage.setItem('username', username);
+                sessionStorage.setItem('host', "");
+                sessionStorage.setItem('hostIp', "");
                 window.location.href='./home.html';
             },
             error: function(err) {

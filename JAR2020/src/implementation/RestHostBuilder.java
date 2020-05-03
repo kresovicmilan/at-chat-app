@@ -1,6 +1,7 @@
 package implementation;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -47,11 +48,11 @@ public class RestHostBuilder {
 		return rest.sendAllLoggedInUsersToNode(handshakeDTO);
 	}
 	
-	public static void deleteHostBuilder(Host receiver, Host deletedHost, Host sender) {
+	public static void deleteHostBuilder(Host receiver, Host deletedHost) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
 		ResteasyWebTarget target = client.target("http://" + receiver.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
-		rest.deleteHost(deletedHost.getAlias(), sender.getIpAddress());
+		rest.deleteHost(deletedHost.getAlias());
 	}
 	
 	public static int sendMessageBuilder(ForeignMessage foreignMessage) {
@@ -68,5 +69,12 @@ public class RestHostBuilder {
 		RestAPI rest = target.proxy(RestAPI.class);
 		int succ = rest.checkIfAlive();
 		return succ;
+	}
+	
+	public static void deleteFromSpecificHostBuilder(Host receiver, Host deletedHost) {
+		ResteasyClient client = new ResteasyClientBuilder().build();
+		ResteasyWebTarget target = client.target("http://" + receiver.getIpAddress() + "/WAR2020/rest/host");
+		RestAPI rest = target.proxy(RestAPI.class);
+		rest.deleteFromSpecificHost(deletedHost.getAlias());
 	}
 }
