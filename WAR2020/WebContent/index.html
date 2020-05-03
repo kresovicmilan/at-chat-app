@@ -36,18 +36,18 @@ $(document).ready(function() {
                 return;
             },
             error: function(err) {
-            	console.log(err);
+            	console.log(err.responseText);
             	if (err !== "User credentials are incorrect") {
-            		console.log(err);
+            		console.log(err.responseText);
 	            	$.ajax({
-						url: "http://" + err + "WAR2020/rest/chat/users/login/",
+						url: "http://" + err.responseText + "/WAR2020/rest/chat/users/login/",
 						type: "POST",
 						data: JSON.stringify({"username":username, "password":password}),
 						contentType: "application/json",
 						success: function(dataSecond) {
 			                sessionStorage.setItem('username', username);
-			                sessionStorage.setItem('host', "http://" + err + "/WAR2020/");
-			                sessionStorage.setItem('hostIp', err + "/WAR2020/");
+			                sessionStorage.setItem('host', "http://" + err.responseText + "/WAR2020/");
+			                sessionStorage.setItem('hostIp', err.responseText + "/WAR2020/");
 			                window.location.href='./home.html';
 			                return;
 			            },
