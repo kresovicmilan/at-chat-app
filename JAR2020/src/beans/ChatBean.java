@@ -336,7 +336,7 @@ public class ChatBean implements ChatRemote {
 		
 		System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Sending message to users on another hosts");
 		for(String hostIp: hostManagerBean.getHosts().keySet()) {
-			if (!hostIp.equals(hostManagerBean.getCurrentSlaveHost().getIpAddress())) {
+			if (!hostIp.equals(hostManagerBean.getCurrentSlaveHost().getIpAddress()) && (hostManagerBean.getForeignLoggedUsers().get(hostIp) != null)) {
 				for(String receiver: hostManagerBean.getForeignLoggedUsers().get(hostIp)) {
 					System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Sending message to user on host {" + hostIp + "}");
 					messageDTO.setRecieverUsername(receiver);
