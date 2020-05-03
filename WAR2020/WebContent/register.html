@@ -16,31 +16,31 @@ $(document).ready(function() {
 	$("#btnRegister").click(function() {
 		const username = $('#inputUsername').val();
 		const password = $("#inputPassword").val();
-		if (password === "" || password === undefined || username === "" || username === undefined) {
+		if (password !== "" && password !== undefined && username !== "" && username !== undefined) {
+			$.ajax({
+				url: "rest/chat/users/register/",
+				type: "POST",
+				data: JSON.stringify({"username":username, "password":password}),
+				contentType: "application/json",
+				success: function(data) {
+	                sessionStorage.setItem('username', username);
+	                sessionStorage.setItem('host', "");
+	                sessionStorage.setItem('hostIp', "");
+	                window.location.href='./home.html';
+	            },
+	            error: function(err) {
+	            	var div = document.getElementById('showMessage');
+					div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Username already exists</div>';
+					document.getElementById('inputUsername').value = '';
+					document.getElementById('inputPassword').value = '';
+	            }	
+			});
+		} else {
 			var div = document.getElementById('showMessage');
 			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Please input username and password</div>';
 			document.getElementById('inputUsername').value = '';
 			document.getElementById('inputPassword').value = '';
 		}
-		
-		$.ajax({
-			url: "rest/chat/users/register/",
-			type: "POST",
-			data: JSON.stringify({"username":username, "password":password}),
-			contentType: "application/json",
-			success: function(data) {
-                sessionStorage.setItem('username', username);
-                sessionStorage.setItem('host', "");
-                sessionStorage.setItem('hostIp', "");
-                window.location.href='./home.html';
-            },
-            error: function(err) {
-            	var div = document.getElementById('showMessage');
-				div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Username already exists</div>';
-				document.getElementById('inputUsername').value = '';
-				document.getElementById('inputPassword').value = '';
-            }	
-		});
 		
 	});
 		

@@ -16,56 +16,56 @@ $(document).ready(function() {
 	$("#btnLogin").click(function() {
 		const username = $('#inputUsername').val();
 		const password = $("#inputPassword").val();
-		if (password === "" || password === undefined || username === "" || username === undefined) {
+		if (password !== "" && password !== undefined && username !== "" && username !== undefined) {
+			$.ajax({
+				url: "rest/chat/users/login/",
+				type: "POST",
+				data: JSON.stringify({"username":username, "password":password}),
+				contentType: "application/json",
+				success: function(data) {
+	                sessionStorage.setItem('username', username);
+	                sessionStorage.setItem('host', "");
+	                sessionStorage.setItem('hostIp', "");
+	                window.location.href='./home.html';
+	                return;
+	            },
+	            error: function(xhr, status, error) {
+	            	console.log(xhr.responseText);
+	            	if (xhr.responseText !== "User credentials are incorrect") {
+	            		console.log(xhr.responseText);
+		            	$.ajax({
+							url: "http://" + xhr.responseText + "/WAR2020/rest/chat/users/login/",
+							type: "POST",
+							data: JSON.stringify({"username":username, "password":password}),
+							contentType: "application/json",
+							success: function(dataSecond) {
+				                sessionStorage.setItem('username', username);
+				                sessionStorage.setItem('host', "http://" + xhr.responseText+ "/WAR2020/");
+				                sessionStorage.setItem('hostIp', xhr.responseText + "/WAR2020/");
+				                window.location.href='./home.html';
+				                return;
+				            },
+				            error: function(errSecond) {
+				                var div = document.getElementById('showMessage');
+								div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Incorrect username or password</div>';
+								document.getElementById('inputUsername').value = '';
+								document.getElementById('inputPassword').value = '';
+				            }	
+						});
+	            	} else {
+		            	var div = document.getElementById('showMessage');
+						div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Incorrect username or password</div>';
+						document.getElementById('inputUsername').value = '';
+						document.getElementById('inputPassword').value = '';
+					}
+	            }	
+			});
+		} else {
 			var div = document.getElementById('showMessage');
 			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Please input username and password</div>';
 			document.getElementById('inputUsername').value = '';
 			document.getElementById('inputPassword').value = '';
 		}
-		
-		$.ajax({
-			url: "rest/chat/users/login/",
-			type: "POST",
-			data: JSON.stringify({"username":username, "password":password}),
-			contentType: "application/json",
-			success: function(data) {
-                sessionStorage.setItem('username', username);
-                sessionStorage.setItem('host', "");
-                sessionStorage.setItem('hostIp', "");
-                window.location.href='./home.html';
-                return;
-            },
-            error: function(err) {
-            	console.log(err.responseText);
-            	if (err !== "User credentials are incorrect") {
-            		console.log(err.responseText);
-	            	$.ajax({
-						url: "http://" + err.responseText + "/WAR2020/rest/chat/users/login/",
-						type: "POST",
-						data: JSON.stringify({"username":username, "password":password}),
-						contentType: "application/json",
-						success: function(dataSecond) {
-			                sessionStorage.setItem('username', username);
-			                sessionStorage.setItem('host', "http://" + err.responseText + "/WAR2020/");
-			                sessionStorage.setItem('hostIp', err.responseText + "/WAR2020/");
-			                window.location.href='./home.html';
-			                return;
-			            },
-			            error: function(errSecond) {
-			                var div = document.getElementById('showMessage');
-							div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Incorrect username or password</div>';
-							document.getElementById('inputUsername').value = '';
-							document.getElementById('inputPassword').value = '';
-			            }	
-					});
-            	} else {
-	            	var div = document.getElementById('showMessage');
-					div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Incorrect username or password</div>';
-					document.getElementById('inputUsername').value = '';
-					document.getElementById('inputPassword').value = '';
-				}
-            }	
-		});
 	});
 		
 });
