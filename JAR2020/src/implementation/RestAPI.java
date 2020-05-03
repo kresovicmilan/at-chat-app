@@ -42,6 +42,7 @@ public interface RestAPI {
 	
 	@DELETE
     @Path("/node/{alias}")
+	@Consumes(MediaType.APPLICATION_JSON)
     public void deleteHost(@PathParam("alias") String alias, String sendingIp);
 	
 	@POST
@@ -51,5 +52,6 @@ public interface RestAPI {
 	
 	@GET
 	@Path("/node")
+	@Produces(MediaType.APPLICATION_JSON)
     public int checkIfAlive();
 }
