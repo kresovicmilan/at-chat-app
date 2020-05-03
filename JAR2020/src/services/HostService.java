@@ -242,16 +242,24 @@ public class HostService implements HostServiceRemote {
     public void purgeMessages(String hostIp) {
     	System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Purging messages of deleted host {" + hostIp + "}");
     	for(User u: storageBean.getUsers().values()) {
+    		List<ForeignMessage> receivedToRemove = new ArrayList<>();
     		for (ForeignMessage received: u.getReceivedForeignMessages()) {
     			if (received.getIpSendingHost().equals(hostIp)) {
-    				u.getReceivedForeignMessages().remove(received);
+    				receivedToRemove.add(received);
     			}
     		}
+    		if (receivedToRemove.size() != 0) {
+    			u.getReceivedForeignMessages().removeAll(receivedToRemove);
+    		}
     		
+    		List<ForeignMessage> sentToRemove = new ArrayList<>();
     		for (ForeignMessage sent: u.getSentForeignMessages()) {
     			if (sent.getIpReceivingHost().equals(hostIp)) {
-    				u.getSentForeignMessages().remove(sent);
+    				sentToRemove.add(sent);
     			}
+    		}
+    		if (sentToRemove.size() != 0) {
+    			u.getSentForeignMessages().removeAll(sentToRemove);
     		}
     	}
     	System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Messages purged");

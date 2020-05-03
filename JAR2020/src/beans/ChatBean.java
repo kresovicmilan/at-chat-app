@@ -2,6 +2,7 @@ package beans;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -402,6 +403,8 @@ public class ChatBean implements ChatRemote {
 					System.out.println("[INFO] Content: " + messageDTO.getMessageContent());
 					System.out.println("-----------------------------------");
 				}
+				
+				Collections.sort(messagesDTO);
 				return messagesDTO;
 			}
 		}
