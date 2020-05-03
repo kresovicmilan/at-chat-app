@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Chat App</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/js/bootstrap-select.min.js"></script>
+
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css">
+
+<link rel="stylesheet" href="font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+<link href="home.css" rel="stylesheet" type="text/css">
+
+<script>
+let socket;
+let hostSocket = "";
+if (sessionStorage.getItem('host') === "") {
+	hostSocket = "ws://192.168.0.14:8080/WAR2020/ws";
+} else {
+	hostSocket = "ws://" + sessionStorage.getItem('hostIp') + "ws";
+}
+console.log(hostSocket);
+let host = sessionStorage.getItem('host');
+let username = '';
+let sessionId = '';
+
+window.onload = function() {
+    username = sessionStorage.getItem('username');
+    if (username !== "" && username !== undefined) {
+	    var pLoggedInAs = document.getElementById('loggedInAs');
+		pLoggedInAs.innerHTML = 'Logged in as <b>' + username + '</b>.';
+
+		$.ajax({
+			url: host + "rest/chat/users/loggedIn",
+			type: "GET",
+			success: function(data) {
+				var selectUsers = document.getElementById('select-users');
+				selectUsers.innerHTML = "";
+				var opt = document.createElement('option');
+				opt.value = "All users";
+				opt.innerHTML = "All users";
+				selectUsers.appendChild(opt);
+				
+				for (usrname of data) {
+					var opt = document.createElement('option');
+					opt.value = usrname;
+				    opt.innerHTML = usrname;
+				    selectUsers.appendChild(opt);
+				}
+
+				$('.selectpicker').selectpicker('refresh');
+            }
+		});
+	} else {
+		window.location.href='./index.html';
+	}
+}
+
+$(document).ready(function() {
+
+	$("#logout-link").click(function() {
+		if (username !== "" && username !== undefined) {
+			$.ajax({
+				url: host + "rest/chat/users/loggedIn/" + username,
+				type: "DELETE",
+				data: "",
+				complete: function(data) {
+					sessionStorage.setItem('username', "");
+					sessionStorage.setItem('host', "");
+                	sessionStorage.setItem('hostIp', "");
+	                alert("User logged out");
+	                window.location.href='./index.html';
+	            }
+			});
+		} else {
+			window.location.href='./index.html';
+		}
+	});
+
+	$("#users-tab").click(function() {
+		$.ajax({
+			url: host + "rest/chat/users/registered",
+			type: "GET",
+			success: function(data) {
+				let i = 1;
+				var divRegisteredList = document.getElementById('registeredList');
+				divRegisteredList.innerHTML = "";
+				for (u of data) {
+					divRegisteredList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
+					i += 1;
+				}
+
+				$.ajax({
+					url: host + "rest/chat/users/loggedIn",
+					type: "GET",
+					success: function(data) {
+						let i = 1;
+						var divLoggedinList = document.getElementById('loggedinList');
+						divLoggedinList.innerHTML = "";
+						for (u of data) {
+							divLoggedinList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
+							i += 1;
+						}
+		            }
+				});
+            }
+		});
+	});
+
+	$('.selectpicker').selectpicker();
+
+	$("#send-message-tab").click(function() {
+		var div = document.getElementById('showMessage');
+		div.innerHTML = "";
+		var selectUsers = document.getElementById('select-users');
+		selectUsers.innerHTML = "";
+		document.getElementById('message-title').value = "";
+		document.getElementById('message-content').value = "";
+
+		$.ajax({
+			url: host + "rest/chat/users/loggedIn",
+			type: "GET",
+			success: function(data) {
+				var selectUsers = document.getElementById('select-users');
+				var opt = document.createElement('option');
+				opt.value = "All users";
+				opt.innerHTML = "All users";
+				selectUsers.appendChild(opt);
+				
+				for (usrname of data) {
+					var opt = document.createElement('option');
+					opt.value = usrname;
+				    opt.innerHTML = usrname;
+				    selectUsers.appendChild(opt);
+				}
+
+				$('.selectpicker').selectpicker('refresh');
+            }
+		});
+
+	});
+
+	$("#btnSendMessage").click(function() {
+		var div = document.getElementById('showMessage');
+		div.innerHTML = "";
+
+		var receiverUsername = $("#select-users").val();
+		if (receiverUsername === "" || receiverUsername === undefined) {
+			var div = document.getElementById('showMessage');
+			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Choose receiver</div>';
+			return;
+		}
+
+		var messageTitle = $("#message-title").val();
+		if (messageTitle === "" || messageTitle === undefined) {
+			var div = document.getElementById('showMessage');
+			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Add title</div>';
+			return;
+		}
+
+		var messageContent = $("#message-content").val();
+		if (messageContent === "" || messageContent === undefined) {
+			var div = document.getElementById('showMessage');
+			div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Add content</div>';
+			return;
+		}
+
+		if (receiverUsername === "All users") {
+			$.ajax({
+			url: host + "rest/chat/messages/all",
+			type: "POST",
+			data: JSON.stringify({"senderUsername":username, "recieverUsername": "all", "messageContent":messageContent, "messageTitle": messageTitle}),
+			contentType: "application/json",
+			success: function(data) {
+                var div = document.getElementById('showMessage');
+				div.innerHTML = '<div class="alert alert-success" role="alert"><b>Success:</b> Message is sent</div>';
+				$('.selectpicker').selectpicker('refresh');
+				return;
+            },
+            error: function(err) {
+                var div = document.getElementById('showMessage');
+				div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Message is not sent</div>';
+				$('.selectpicker').selectpicker('refresh');
+				return;
+            }
+			});
+		} else {
+			$.ajax({
+				url: host + "rest/chat/messages/user",
+				type: "POST",
+				data: JSON.stringify({"senderUsername":username, "recieverUsername": receiverUsername, "messageContent":messageContent, "messageTitle": messageTitle}),
+				contentType: "application/json",
+				success: function(data) {
+	            	var div = document.getElementById('showMessage');
+					div.innerHTML = '<div class="alert alert-success" role="alert"><b>Success:</b> Message is sent</div>';
+					$('.selectpicker').selectpicker('refresh');
+					return;
+	            },
+	            error: function(err) {
+	                var div = document.getElementById('showMessage');
+					div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Message is not sent</div>';
+					$('.selectpicker').selectpicker('refresh');
+					return;
+	            }
+			});
+		}
+
+		$('#select-users').val('');
+		$('#message-title').val('');
+		$('#message-content').val('');
+	});
+
+	$("#inbox-tab").click(function() {
+		$.ajax({
+			url: host + "rest/chat/messages/" + username,
+			type: "GET",
+			success: function(data) {
+				var divRecievedMessages = document.getElementById('recievedMessages');
+				divRecievedMessages.innerHTML = "";
+
+				var divInboxMessage = document.getElementById('inbox-message');
+				if (data.length !== 0) {
+					divInboxMessage.innerHTML = '';
+				} else {
+					divInboxMessage.innerHTML = '<center><p class="text-small mt-2 font-weight-light">Inbox is empty.</p></center>';
+				}
+
+				var dataReverse = data.reverse();
+				for (el of dataReverse) {
+	                divRecievedMessages.innerHTML += '<li class="timeline-item bg-white rounded ml-3 p-4 shadow"><div class="timeline-arrow"></div><h2 class="h5 mb-0">' + el.messageTitle + '</h2><span class="small text-gray" style="margin-right: 1em; font-weight: bold"><i class="fa fa-user-circle-o mr-1"></i>' + el.senderUsername + '   </span><span class="small text-gray" style="font-weight: bold"><i class="fa fa-clock-o mr-1"></i>' + el.dateSent + '</span><p class="text-small mt-2 font-weight-normal">' + el.messageContent + '</p></li>';
+				}
+            }
+		});
+	});
+	
+	try {
+		socket = new WebSocket(hostSocket + "/" + sessionStorage.getItem('username'));
+	
+		console.log('connect: Socket Status: ' + socket.readyState);
+		
+		socket.onopen = function() {
+			console.log('onopen: Socket Status: ' + socket.readyState + ' (open)');
+		}
+
+		
+		socket.onmessage = function(event) {
+			var socketMessage = JSON.parse(event.data);
+			var msg = JSON.parse(socketMessage.message);
+			var type = socketMessage.type;
+			let i = 1;
+			switch(type) {
+    			case "registered":
+					var divRegisteredList = document.getElementById('registeredList');
+					divRegisteredList.innerHTML = "";
+					for (u of msg) {
+						divRegisteredList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
+						i += 1;
+					}
+					break;
+				case "logged":
+					var divLoggedinList = document.getElementById('loggedinList');
+					divLoggedinList.innerHTML = "";
+					for (u of msg) {
+						divLoggedinList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
+						i += 1;
+					}
+
+					var selectUsers = document.getElementById('select-users');
+					selectUsers.innerHTML = "";
+					var opt = document.createElement('option');
+					opt.value = "All users";
+					opt.innerHTML = "All users";
+					selectUsers.appendChild(opt);
+
+					for (usrname of msg) {
+						var opt = document.createElement('option');
+						opt.value = usrname;
+					    opt.innerHTML = usrname;
+					    selectUsers.appendChild(opt);
+					}
+
+					$('.selectpicker').selectpicker('refresh');
+					break;
+				case "message":
+					var divInboxMessage = document.getElementById('inbox-message');
+					divInboxMessage.innerHTML = '';
+					var divRecievedMessages = document.getElementById('recievedMessages');
+					divRecievedMessages.innerHTML = '<li class="timeline-item bg-white rounded ml-3 p-4 shadow"><div class="timeline-arrow"></div><h2 class="h5 mb-0">' + msg.messageTitle + '</h2><span class="small text-gray" style="margin-right: 1em; font-weight: bold"><i class="fa fa-user-circle-o mr-1"></i>' + msg.senderUsername + '   </span><span class="small text-gray" style="font-weight: bold"><i class="fa fa-clock-o mr-1"></i>' + msg.dateSent + '</span><p class="text-small mt-2 font-weight-normal">' + msg.messageContent + '</p></li>' + divRecievedMessages.innerHTML;
+					break;
+			}
+		}
+		
+		socket.onclose = function() {
+			sessionStorage.setItem('username', '');
+			sessionStorage.setItem('host', "");
+            sessionStorage.setItem('hostIp', "");
+			socket = null;
+		}
+		
+	} catch(exception) {
+		console.log('Error: ' + exception);
+	}
+});
+</script>
+
+</head>
+<body>
+	<div class="container py-5">
+	  <!-- For demo purpose -->
+	  <div class="row mb-5">
+	    <div class="col-lg-8 text-white py-4 text-center mx-auto">
+	      <h1 class="display-4"><b>Chat App</b></h1>
+	      <p id="loggedInAs"class="lead mb-0">Logged in as .</p>
+	      <p id="loggedInAs" class="lead mb-0"><a href="#" id="logout-link">Logout</a></p>
+	      </p>
+	    </div>
+	  </div>
+
+	  <div class="p-5 bg-white rounded shadow mb-5">
+	    <!-- Lined tabs-->
+	    <ul id="myTab2" role="tablist" class="nav nav-tabs nav-pills with-arrow lined flex-column flex-sm-row text-center">
+	      <li class="nav-item flex-sm-fill">
+	        <a id="send-message-tab" data-toggle="tab" href="#send-message" role="tab" aria-controls="send-message" aria-selected="true" class="nav-link text-uppercase font-weight-bold mr-sm-3 rounded-0 active">Send</a>
+	      </li>
+	      <li class="nav-item flex-sm-fill">
+	        <a id="inbox-tab" data-toggle="tab" href="#inbox" role="tab" aria-controls="inbox" aria-selected="false" class="nav-link text-uppercase font-weight-bold mr-sm-3 rounded-0">Inbox</a>
+	      </li>
+	      <li class="nav-item flex-sm-fill">
+	        <a id="users-tab" data-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="false" class="nav-link text-uppercase font-weight-bold rounded-0">Users</a>
+	      </li>
+	    </ul>
+	    <div id="myTab2Content" class="tab-content">
+	      <div id="send-message" role="tabpanel" aria-labelledby="send-message-tab" class="tab-pane fade px-4 py-5 message-class scrollbar-primary show active">
+		      	<div class="col-lg-12 bg-white rounded shadow" id="message-structure">
+		      			<div id="showMessage"></div>
+			      		<div class="form-group row">
+			      			<label for="reciever-label" class="col-sm-2 col-form-label">Receiver</label>
+			      			<div class="col-sm-2">
+						    	<select id="select-users" class="selectpicker" data-live-search="true" title="Choose receiver...">
+								</select>
+							</div>
+						</div>
+						<div class="form-group row">
+						    <label for="title-label" class="col-sm-2 col-form-label">Title</label>
+						    <div class="col-sm-10">
+						    	<input class="form-control" id="message-title" placeholder="Title">
+							</div>
+						</div>
+						<div class="form-group">
+						    <label for="message-content-label">Content</label>
+						    <textarea class="form-control" id="message-content" rows="5"></textarea>
+						</div>
+						<div class = "form-group">
+							<button type="submit" class="btn btn-primary btn-lg float-right" id="btnSendMessage">Submit</button>
+						</div>
+				</div>
+	      </div>
+
+	      <div id="inbox" role="tabpanel" aria-labelledby="inbox-tab" class="tab-pane fade px-4 py-5 message-class scrollbar-primary">
+	        	<div class="col-lg-12 mx-auto">
+	                
+	                <div id="inbox-message">
+	                	<center>
+	                		<p class="text-small mt-2 font-weight-light">
+	                			Inbox is empty.
+	                		</p>
+	                	</center>
+	                </div>
+	                <!-- Timeline -->
+	                <ul id="recievedMessages" class="timeline">
+	                </ul><!-- End -->
+
+	            </div>
+	      </div>
+	      <div id="users" role="tabpanel" aria-labelledby="users-tab" class="tab-pane fade px-4 py-5 message-class scrollbar-primary">
+	      	<div class="row">
+	      		<div class="col-lg-4 mx-auto bg-white rounded shadow">
+
+	                <!-- Fixed header table-->
+	                <div class="table-responsive">
+	                    <table class="table table-fixed">
+	                        <thead>
+	                            <tr>
+	                            	<center>
+		                                <th scope="col" class="col-4">#</th>
+		                                <th scope="col" class="col-8">Registered</th>
+	                            	</center>
+	                            </tr>
+	                        </thead>
+	                        <tbody id="registeredList">
+	                        </tbody>
+	                    </table>
+	                </div><!-- End -->
+	                
+	            </div>
+
+	            <div class="col-lg-4 mx-auto bg-white rounded shadow">
+
+	                <!-- Fixed header table-->
+	                <div class="table-responsive">
+	                    <table class="table table-fixed">
+	                        <thead>
+	                            <tr>
+	                            	<center>
+		                                <th scope="col" class="col-4">#</th>
+		                                <th scope="col" class="col-8">Logged in</th>
+	                            	</center>
+	                            </tr>
+	                        </thead>
+	                        <tbody id="loggedinList">
+	                        </tbody>
+	                    </table>
+	                </div><!-- End -->
+	                
+	            </div>
+	        </div>
+	      </div>
+	    </div>
+	    <!-- End lined tabs -->
+	  </div>
+	</div>
+</body>
+</html>
