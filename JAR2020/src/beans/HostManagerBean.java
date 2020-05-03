@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -108,7 +107,7 @@ public class HostManagerBean {
 		System.out.println("[SHUTDOWN] Host deleted from master");
 	}
 	
-	@Schedule(hour="*", minute = "*", second = "*/60", info = "Every 15 seconds")
+	@Schedule(hour="*", minute = "*", second = "*/15", info = "Every 15 seconds")
 	public void heartbeatProtocol() {
 		System.out.println("[INFO] [HEARTBEAT] Starting");
 		
@@ -239,6 +238,7 @@ public class HostManagerBean {
 	}
 	
 	public void deleteHostFromCurrentHost(String hostIp) {
+		this.hosts.remove(hostIp);
 		this.foreignLoggedUsers.remove(hostIp);
 		this.foreignRegisteredUsers.remove(hostIp);
 		System.out.println("[DELETE] [" + currentSlaveHost.getIpAddress() + "] Host {" + hostIp + "} is removed");
@@ -250,7 +250,7 @@ public class HostManagerBean {
 	
 	public void deleteHostFromOtherHosts(Host deletedHost) {
 		for(Host h: hosts.values()) {
-			if (!h.getIpAddress().equals(currentSlaveHost.getIpAddress())) {
+			if ((!h.getIpAddress().equals(currentSlaveHost.getIpAddress())) && (!h.getIpAddress().equals(deletedHost.getIpAddress()))) {
 				System.out.println("[DELETE] [" + currentSlaveHost.getIpAddress() + "] Deleting host {" + deletedHost.getIpAddress() + "} - from host {" + h.getIpAddress() + "}");
 				try {
 					RestHostBuilder.deleteFromSpecificHostBuilder(h, deletedHost);

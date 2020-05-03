@@ -1,7 +1,6 @@
 package implementation;
 
 import java.util.Collection;
-import java.util.List;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;

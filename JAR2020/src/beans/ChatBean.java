@@ -164,7 +164,7 @@ public class ChatBean implements ChatRemote {
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<String> getRegistered() {
 		System.out.println("---- ALL REGISTERED USERS ----");
-		List<String> usernames = new ArrayList();
+		List<String> usernames = new ArrayList<>();
 		
 		for(User u: storageBean.getUsers().values()) {
 			System.out.println(u.getUsername());
@@ -186,7 +186,7 @@ public class ChatBean implements ChatRemote {
 	public List<String> getAllLoggedIn() {
 		System.out.println("---- ALL LOGGED IN USERS ----");
 		List<String> activeUsers = new ArrayList<>(ws.getUserSessions().keySet());
-		List<String> usernames = new ArrayList();
+		List<String> usernames = new ArrayList<>();
 		
 		for(User u: storageBean.getLoggedInUsers().values()) {
 			System.out.println(u.getUsername());
