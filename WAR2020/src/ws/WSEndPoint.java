@@ -46,7 +46,6 @@ public class WSEndPoint {
     		if (!userSessions.containsKey(username)) {
     			List<Session> userListSessions = new ArrayList<>();
     			userListSessions.add(session);
-    			System.out.println("Stavljen username u mapu user-listu sesija " + username);
     			userSessions.put(username, userListSessions);
     			
     			List<String> usernames = new ArrayList<>(userSessions.keySet());
@@ -86,7 +85,6 @@ public class WSEndPoint {
     			userSessions.get(username).add(session);
     		}
     		
-    		System.out.println(userSessions.keySet().size());
             //sessions.add(session);
         }
     }

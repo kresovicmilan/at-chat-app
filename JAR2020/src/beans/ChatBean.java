@@ -103,7 +103,7 @@ public class ChatBean implements ChatRemote {
 		System.out.println("[INFO] Password: " + u.getPassword());
 		for (User userSpecific: storageBean.getUsers().values()) {
 			if (userSpecific.getUsername().equals(u.getUsername()) && userSpecific.getPassword().equals(u.getPassword())) {
-				storageBean.getLoggedInUsers().put(u.getUsername(), u);
+				storageBean.getLoggedInUsers().put(userSpecific.getUsername(), userSpecific);
 				System.out.println("[LOGIN - SUCCESSFUL] User logged in");
 				
 				//Informing hosts about new registered and logged in users
