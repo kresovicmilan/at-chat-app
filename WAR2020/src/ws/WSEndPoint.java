@@ -46,13 +46,15 @@ public class WSEndPoint {
     		if (!userSessions.containsKey(username)) {
     			List<Session> userListSessions = new ArrayList<>();
     			userListSessions.add(session);
+    			System.out.println("Stavljen username u mapu user-listu sesija " + username);
     			userSessions.put(username, userListSessions);
     			
     			List<String> usernames = new ArrayList<>(userSessions.keySet());
     			for (List<String> listOfForeignLoggedInUsers: hostManagerBean.getForeignLoggedUsers().values()) {
     	    		usernames.addAll(listOfForeignLoggedInUsers);
     	    	}
-    			SocketMessage message = new SocketMessage("logged", new Date(), new Gson().toJson(usernames));
+    			List<String> jsonListUnique = conversionUnique(usernames);
+    			SocketMessage message = new SocketMessage("logged", new Date(), new Gson().toJson(jsonListUnique));
     			String jsonMessage = new Gson().toJson(message);
     			try {
 	    			for (Session s: sessions) {
@@ -69,6 +71,7 @@ public class WSEndPoint {
     			for (Set<String> setOfForeignRegisteredUsers: hostManagerBean.getForeignRegisteredUsers().values()) {
     	    		usernames.addAll(new ArrayList<String>(setOfForeignRegisteredUsers));
     	    	}
+    			jsonListUnique = conversionUnique(usernames);
     			message = new SocketMessage("registered", new Date(), new Gson().toJson(usernames));
     			jsonMessage = new Gson().toJson(message);
     			try {
@@ -82,6 +85,8 @@ public class WSEndPoint {
     		} else {
     			userSessions.get(username).add(session);
     		}
+    		
+    		System.out.println(userSessions.keySet().size());
             //sessions.add(session);
         }
     }
@@ -169,6 +174,12 @@ public class WSEndPoint {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    }
+    
+    public List<String> conversionUnique(List<String> list) {
+    	Set<String> set = new HashSet<>(list);
+    	List<String> unique = new ArrayList<>(set);
+    	return unique;
     }
 
 	public static Map<String, List<Session>> getUserSessions() {
