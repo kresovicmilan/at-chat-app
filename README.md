@@ -15,7 +15,7 @@ To successfully run the application on your local machine please install followi
 
 * JBoss in Eclipse
 * WildFly v11.0.0.Final [*(download link)*](https://wildfly.org/downloads/)
-* Gson v2.8.2 [*(download link)*](https://repo1.maven.org/maven2/com/google/code/gson/gson/2.8.2/)
+* Gson v2.8.2 [*(download link)*](https://repo1.maven.org/maven2/com/google/code/gson/gson/2.8.2/) *(or find it in this project)*
 
 ## Configuration - Eclipse
 
