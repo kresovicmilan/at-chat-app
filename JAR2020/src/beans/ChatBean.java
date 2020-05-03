@@ -252,6 +252,9 @@ public class ChatBean implements ChatRemote {
 			}
 			
 			System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Sending message to user on host {" + hostWithUser.getIpAddress() + "}");
+			DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+			Date dateSent = new Date();
+			messageDTO.setDateSent(dateFormat.format(dateSent));
 			ForeignMessage foreignMessage = new ForeignMessage(messageDTO, hostManagerBean.getCurrentSlaveHost().getIpAddress(), hostWithUser.getIpAddress());
 			
 			int succ;
@@ -394,7 +397,7 @@ public class ChatBean implements ChatRemote {
 					MessageDTO messageDTO = new MessageDTO(fm);
 					messagesDTO.add(messageDTO);
 					System.out.println("[INFO] Sender: " + messageDTO.getSenderUsername());
-					System.out.println("[INFO] Date: " + dateFormat.format(fm.getDateSent()));
+					System.out.println("[INFO] Date: " + messageDTO.getDateSent());
 					System.out.println("[INFO] Content: " + messageDTO.getMessageTitle());
 					System.out.println("[INFO] Content: " + messageDTO.getMessageContent());
 					System.out.println("-----------------------------------");
