@@ -155,7 +155,7 @@ public class HostService implements HostServiceRemote {
 	}
     
     @Override
-    public void deleteHost(@PathParam("alias") String alias) {
+    public void deleteHost(@PathParam("alias") String alias, String sendingIp) {
     	System.out.println("[DELETE] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Deleting host: " + alias);
     	Host deletedHost = hostManagerBean.getHosts().remove(alias);
 		if (deletedHost != null) {
@@ -169,9 +169,9 @@ public class HostService implements HostServiceRemote {
 			
 			if (hostManagerBean.getCurrentSlaveHost().getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress())) {
 	    		for (Host h: hostManagerBean.getHosts().values()) {
-	    			if (!h.getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress())) {
+	    			if ((!h.getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress())) && (!h.getIpAddress().equals(sendingIp))) {
 	    				System.out.println("[DELETE] [MASTER] Deleting {" + alias + "} from {" + h.getAlias() + "}");
-	    				RestHostBuilder.deleteHostBuilder(h, deletedHost);
+	    				RestHostBuilder.deleteHostBuilder(h, deletedHost, hostManagerBean.getMasterHost());
 	    			}
 	    		}
 	    		System.out.println("[DELETE] [MASTER] All other host are purged from {" + alias + "}");
@@ -198,13 +198,11 @@ public class HostService implements HostServiceRemote {
     		return 0;
     	}
     }
-
-    /*@GET
-    @Path("/node")
-    public String heartbeat() {
-        System.out.println("PERIODICNO PROVERAVAJ DA LI SU SVI CVOROVI AKTIVNI");
-        return "OK";
-    }*/
+    
+    @Override
+    public int checkIfAlive() {
+    	return 1;
+    }
     
     public void updateUsersInSocket() {
     	System.out.println("[INFO] Updating sockets");

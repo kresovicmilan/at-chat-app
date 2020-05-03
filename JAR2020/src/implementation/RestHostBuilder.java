@@ -47,11 +47,11 @@ public class RestHostBuilder {
 		return rest.sendAllLoggedInUsersToNode(handshakeDTO);
 	}
 	
-	public static void deleteHostBuilder(Host receiver, Host deletedHost) {
+	public static void deleteHostBuilder(Host receiver, Host deletedHost, Host sender) {
 		ResteasyClient client = new ResteasyClientBuilder().build();
 		ResteasyWebTarget target = client.target("http://" + receiver.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
-		rest.deleteHost(deletedHost.getAlias());
+		rest.deleteHost(deletedHost.getAlias(), sender.getIpAddress());
 	}
 	
 	public static int sendMessageBuilder(ForeignMessage foreignMessage) {
@@ -59,6 +59,14 @@ public class RestHostBuilder {
 		ResteasyWebTarget target = client.target("http://" + foreignMessage.getIpReceivingHost() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
 		int succ = rest.sendMessage(foreignMessage);
+		return succ;
+	}
+	
+	public static int checkIfAliveBuilder(Host checkedHost) {
+		ResteasyClient client = new ResteasyClientBuilder().build();
+		ResteasyWebTarget target = client.target("http://" + checkedHost.getIpAddress() + "/WAR2020/rest/host");
+		RestAPI rest = target.proxy(RestAPI.class);
+		int succ = rest.checkIfAlive();
 		return succ;
 	}
 }

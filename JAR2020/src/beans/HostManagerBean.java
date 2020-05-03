@@ -14,6 +14,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
+import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
@@ -98,8 +99,43 @@ public class HostManagerBean {
 	public void shutDownHost() {
 		System.out.println("[SHUTDOWN] Shutting down the host");
 		System.out.println("[SHUTDOWN] Deleting host from master");
-		RestHostBuilder.deleteHostBuilder(this.masterHost, this.currentSlaveHost);
+		RestHostBuilder.deleteHostBuilder(this.masterHost, this.currentSlaveHost, this.currentSlaveHost);
 		System.out.println("[SHUTDOWN] Host deleted from master");
+	}
+	
+	@Schedule(hour="*", minute = "*", second = "*/15", info = "Every 15 seconds")
+	public void heartbeatProtocol() {
+		System.out.println("[INFO] [HEARTBEAT] Starting");
+		for (Host h: hosts.values()) {
+			if (!h.getIpAddress().contains(currentSlaveHost.getIpAddress())) {
+				System.out.println("[INFO] [HEARTBEAT] Checking is alive {" + h.getIpAddress() + "}");
+				int succ = 0;
+				try {
+					succ = RestHostBuilder.checkIfAliveBuilder(h);
+				} catch (Exception e) {
+					System.out.println("[INFO] [HEARTBEAT] Host {" + h.getIpAddress() + "} didn't answer");
+					System.out.println("[INFO] [HEARTBEAT] Checking is alive {" + h.getIpAddress() + "} - Second time");
+					try {
+						succ = RestHostBuilder.checkIfAliveBuilder(h);
+					} catch (Exception eSecond) {
+						System.out.println("[INFO] [HEARTBEAT] Host {" + h.getIpAddress() + "} didn't answer");
+						System.out.println("[INFO] [HEARTBEAT] Host {" + h.getIpAddress() + "} is dead");
+					}
+				}
+				
+				if (succ != 1) {
+					System.out.println("[INFO] [HEARTBEAT] Deleting host {" + h.getIpAddress() + "} from current host");
+					RestHostBuilder.deleteHostBuilder(this.currentSlaveHost, h, this.currentSlaveHost);
+					System.out.println("[INFO] [HEARTBEAT] Host deleted {" + h.getIpAddress() + "} from current host");
+					System.out.println("[INFO] [HEARTBEAT] Deleting host {" + h.getIpAddress() + "} from other hosts");
+					RestHostBuilder.deleteHostBuilder(this.masterHost, h, this.currentSlaveHost);
+					System.out.println("[INFO] [HEARTBEAT] Host deleted {" + h.getIpAddress() + "} from other hosts");
+				} else {
+					System.out.println("[INFO] [HEARTBEAT] Host {" + h.getIpAddress() + "} is OK");
+				}
+			}
+		}
+		System.out.println("[INFO] [HEARTBEAT] Finished");
 	}
 	
 	public void startAgain(String err) {
@@ -127,7 +163,7 @@ public class HostManagerBean {
 		} catch (Exception e) {
 			System.out.println("[INFO] [ERROR] Some error has occured in " + err.toLowerCase() + " step");
 			System.out.println("[INFO] [ERROR] Deleting host from master");
-			RestHostBuilder.deleteHostBuilder(this.masterHost, this.currentSlaveHost);
+			RestHostBuilder.deleteHostBuilder(this.masterHost, this.currentSlaveHost, this.currentSlaveHost);
 			System.out.println("[INFO] [ERROR] Host deleted from master");
 		}
 	}

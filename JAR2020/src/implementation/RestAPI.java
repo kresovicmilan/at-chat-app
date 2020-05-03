@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -41,15 +42,14 @@ public interface RestAPI {
 	
 	@DELETE
     @Path("/node/{alias}")
-    public void deleteHost(@PathParam("alias") String alias);
+    public void deleteHost(@PathParam("alias") String alias, String sendingIp);
 	
 	@POST
     @Path("/message")
     @Consumes(MediaType.APPLICATION_JSON)
 	public int sendMessage(ForeignMessage foreignMessage);
-
-
-    /*@GET
-    @Path("/node")
-    public String heartbeat();*/
+	
+	@GET
+	@Path("/node")
+    public int checkIfAlive();
 }

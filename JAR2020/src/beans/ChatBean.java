@@ -305,7 +305,7 @@ public class ChatBean implements ChatRemote {
 		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 		String jsonMessageDTO = "";
 		
-		for(User u: storageBean.getUsers().values()) {
+		for(User u: storageBean.getLoggedInUsers().values()) {
 			Message message = new Message();
 			message.setMessageContent(messageDTO.getMessageContent());
 			message.setSender(sender);
