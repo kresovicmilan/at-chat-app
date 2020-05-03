@@ -11,6 +11,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import DTO.HandshakeDTO;
+import models.ForeignMessage;
 import models.Host;
 import models.UpdatePackage;
 
@@ -41,12 +42,14 @@ public interface RestAPI {
 	@DELETE
     @Path("/node/{alias}")
     public void deleteHost(@PathParam("alias") String alias);
+	
+	@POST
+    @Path("/message")
+    @Consumes(MediaType.APPLICATION_JSON)
+	public int sendMessage(ForeignMessage foreignMessage);
 
-    /*@DELETE
-    @Path("/node/{alias}")
-    public Response removeNode(@PathParam("alias") String alias);
 
-    @GET
+    /*@GET
     @Path("/node")
     public String heartbeat();*/
 }

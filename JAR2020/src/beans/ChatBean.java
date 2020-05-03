@@ -25,6 +25,7 @@ import com.google.gson.Gson;
 
 import DTO.MessageDTO;
 import implementation.RestHostBuilder;
+import models.ForeignMessage;
 import models.Host;
 import models.Message;
 import models.UpdatePackage;
@@ -197,43 +198,88 @@ public class ChatBean implements ChatRemote {
     public Response sendMessageToUser(MessageDTO messageDTO) {
 		System.out.println("---- SEND MESSAGE TO USER ----");
 		System.out.println("[INFO] Sender: " + messageDTO.getSenderUsername());
-		System.out.println("[INFO] Reciever: " + messageDTO.getRecieverUsername());
+		System.out.println("[INFO] Receiver: " + messageDTO.getRecieverUsername());
 		System.out.println("[INFO] Message title: " + messageDTO.getMessageTitle());
 		System.out.println("[INFO] Message content: " + messageDTO.getMessageContent());
-		Message message = new Message();
 		
-		message.setMessageContent(messageDTO.getMessageContent());
-		
-		User sender = storageBean.getUsers().get(messageDTO.getSenderUsername());
-		if (sender == null) {
-			System.out.println("[ERROR] Sender doesn't exist: " + messageDTO.getSenderUsername());
-			return Response.status(400).entity("Sender doesn't exist").build();
+		if (isDirectUser(messageDTO.getRecieverUsername())) {
+			Message message = new Message();
+			
+			message.setMessageContent(messageDTO.getMessageContent());
+			
+			User sender = storageBean.getUsers().get(messageDTO.getSenderUsername());
+			if (sender == null) {
+				System.out.println("[ERROR] Sender doesn't exist: " + messageDTO.getSenderUsername());
+				return Response.status(400).entity("Sender doesn't exist").build();
+			}
+			
+			User reciever = storageBean.getUsers().get(messageDTO.getRecieverUsername());
+			if (reciever == null) {
+				System.out.println("[ERROR] Reciever doesn't exist: " + messageDTO.getRecieverUsername());
+				return Response.status(400).entity("Reciever doesn't exist").build();
+			}
+			
+			message.setSender(sender);
+			message.setReciever(reciever);
+			Date dateSent = new Date();
+			message.setDateSent(dateSent);
+			message.setMessageTitle(messageDTO.getMessageTitle());
+			message.setMessageContent(messageDTO.getMessageContent());
+			
+			sender.getSentMessages().add(message);
+			reciever.getRecievedMessages().add(message);
+			
+			DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+			messageDTO.setDateSent(dateFormat.format(dateSent));
+			
+			String jsonMessageDTO = new Gson().toJson(messageDTO);
+			ws.echoTextMessage(jsonMessageDTO);
+			
+			System.out.println("[INFO] Message has been sent");
+			return Response.status(200).entity("Message has been sent").build();
+		} else {
+			
+			if (!isDirectUser(messageDTO.getSenderUsername())) {
+				System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() +"] [ERROR] Sender doesn't exist: " + messageDTO.getSenderUsername());
+				return Response.status(400).entity("Sender doesn't exist").build();
+			}
+			
+			System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Send message to user on another host");
+			Host hostWithUser = findHostWithUsername(messageDTO.getRecieverUsername());
+			if(hostWithUser == null) {
+				System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Host with that username has not been found");
+				return Response.status(400).entity("Reciever doesn't exist").build();
+			}
+			
+			System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Sending message to user on host {" + hostWithUser.getIpAddress() + "}");
+			ForeignMessage foreignMessage = new ForeignMessage(messageDTO, hostManagerBean.getCurrentSlaveHost().getIpAddress(), hostWithUser.getIpAddress());
+			
+			int succ;
+			try {
+				succ = RestHostBuilder.sendMessageBuilder(foreignMessage);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] [ERROR] Could not send message to user on host {" + hostWithUser.getIpAddress() + "} - Failed first time");
+				try {
+					System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Sending message to user on host {" + hostWithUser.getIpAddress() + "} - Second time");
+					succ = RestHostBuilder.sendMessageBuilder(foreignMessage);
+				} catch (Exception eSecond) {
+					eSecond.printStackTrace();
+					System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] [ERROR] Could not send message to user on host {" + hostWithUser.getIpAddress() + "} - Failed second time - Finish");
+					return Response.status(400).entity("").build();
+				}
+			}
+			
+			if (succ == 1) {
+				storageBean.getUsers().get(foreignMessage.getSenderUsername()).getSentForeignMessages().add(foreignMessage);
+				System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Message sent to user on host {" + hostWithUser.getIpAddress() + "}");
+				return Response.status(200).entity("Message has been sent").build();
+			} else {
+				System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] [ERROR] Could not send message to user on host {" + hostWithUser.getIpAddress() + "} - Problem on receiving host");
+				return Response.status(400).entity("").build();
+			}
 		}
 		
-		User reciever = storageBean.getUsers().get(messageDTO.getRecieverUsername());
-		if (reciever == null) {
-			System.out.println("[ERROR] Reciever doesn't exist: " + messageDTO.getRecieverUsername());
-			return Response.status(400).entity("Reciever doesn't exist").build();
-		}
-		
-		message.setSender(sender);
-		message.setReciever(reciever);
-		Date dateSent = new Date();
-		message.setDateSent(dateSent);
-		message.setMessageTitle(messageDTO.getMessageTitle());
-		message.setMessageContent(messageDTO.getMessageContent());
-		
-		sender.getSentMessages().add(message);
-		reciever.getRecievedMessages().add(message);
-		
-		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-		messageDTO.setDateSent(dateFormat.format(dateSent));
-		
-		String jsonMessageDTO = new Gson().toJson(messageDTO);
-		ws.echoTextMessage(jsonMessageDTO);
-		
-		System.out.println("[INFO] Message has been sent");
-		return Response.status(200).entity("Message has been sent").build();
     }
 	
 	@POST
@@ -274,6 +320,42 @@ public class ChatBean implements ChatRemote {
 			System.out.println("[INFO] Sent to: " + u.getUsername());
 		}
 		
+		System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Sending message to users on another hosts");
+		for(String hostIp: hostManagerBean.getHosts().keySet()) {
+			if (!hostIp.equals(hostManagerBean.getCurrentSlaveHost().getIpAddress())) {
+				for(String receiver: hostManagerBean.getForeignLoggedUsers().get(hostIp)) {
+					System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Sending message to user on host {" + hostIp + "}");
+					messageDTO.setRecieverUsername(receiver);
+					Date dateSent = new Date();
+					messageDTO.setDateSent(dateFormat.format(dateSent));
+					ForeignMessage foreignMessage = new ForeignMessage(messageDTO, hostManagerBean.getCurrentSlaveHost().getIpAddress(), hostIp);
+					
+					int succ = 0;
+					try {
+						succ = RestHostBuilder.sendMessageBuilder(foreignMessage);
+					} catch (Exception e) {
+						e.printStackTrace();
+						System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] [ERROR] Could not send message to user on host {" + hostIp + "} - Failed first time");
+						try {
+							System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Sending message to user on host {" + hostIp + "} - Second time");
+							succ = RestHostBuilder.sendMessageBuilder(foreignMessage);
+						} catch (Exception eSecond) {
+							eSecond.printStackTrace();
+							System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] [ERROR] Could not send message to user on host {" + hostIp + "} - Failed second time - Finish");
+						}
+					}
+					
+					if (succ == 1) {
+						storageBean.getUsers().get(foreignMessage.getSenderUsername()).getSentForeignMessages().add(foreignMessage);
+						System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Message sent to user on host {" + hostIp + "}");
+					} else {
+						System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] [ERROR] Could not send message to user on host {" + hostIp + "} - Problem on receiving host");
+					}
+				}
+			}
+		}
+		System.out.println("[SEND] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Message sent to users on other hosts");
+		
 		System.out.println("[INFO] Messages have been sent");
 		return Response.status(200).entity("Message has been sent").build();
 	}
@@ -296,11 +378,23 @@ public class ChatBean implements ChatRemote {
 		System.out.println("---- Inbox ----");
 		for(User u: storageBean.getUsers().values()) {
 			if (u.getUsername().equals(username)) {
+				System.out.println("--- FROM THIS HOST ---");
 				for (Message m: u.getRecievedMessages()) {
 					MessageDTO messageDTO = new MessageDTO(m.getSender().getUsername(), username, m.getMessageContent(), m.getMessageTitle(), dateFormat.format(m.getDateSent()));
 					messagesDTO.add(messageDTO);
 					System.out.println("[INFO] Sender: " + messageDTO.getSenderUsername());
 					System.out.println("[INFO] Date: " + dateFormat.format(m.getDateSent()));
+					System.out.println("[INFO] Content: " + messageDTO.getMessageTitle());
+					System.out.println("[INFO] Content: " + messageDTO.getMessageContent());
+					System.out.println("-----------------------------------");
+				}
+				
+				System.out.println("--- FROM FOREIGN HOSTS ---");
+				for (ForeignMessage fm: u.getReceivedForeignMessages()) {
+					MessageDTO messageDTO = new MessageDTO(fm);
+					messagesDTO.add(messageDTO);
+					System.out.println("[INFO] Sender: " + messageDTO.getSenderUsername());
+					System.out.println("[INFO] Date: " + dateFormat.format(fm.getDateSent()));
 					System.out.println("[INFO] Content: " + messageDTO.getMessageTitle());
 					System.out.println("[INFO] Content: " + messageDTO.getMessageContent());
 					System.out.println("-----------------------------------");
@@ -377,6 +471,23 @@ public class ChatBean implements ChatRemote {
 		}
 		
 		System.out.println("[INFO] [INFORMING HOSTS] Other hosts are informed of users from this node");
+	}
+	
+	public Boolean isDirectUser(String username) {
+		return storageBean.getUsers().containsKey(username);
+	}
+	
+	public Host findHostWithUsername(String username) {
+		Host noHost = null;
+		for (Map.Entry<String, List<String>> entry : hostManagerBean.getForeignLoggedUsers().entrySet())  {
+			for (String u : entry.getValue()) {
+				if(u.equals(username)) {
+					return hostManagerBean.getHosts().get(entry.getKey());
+				}
+			}
+		}
+		
+		return noHost;
 	}
 	
 	static public class Msg {

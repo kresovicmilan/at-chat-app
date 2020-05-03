@@ -11,6 +11,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import DTO.HandshakeDTO;
+import models.ForeignMessage;
 import models.Host;
 import models.UpdatePackage;
 
@@ -38,8 +39,12 @@ public interface HostServiceRemote {
     @Produces(MediaType.APPLICATION_JSON)
 	public UpdatePackage sendAllLoggedInUsersToNode(HandshakeDTO handshakeDTO);
 	
-	
 	@DELETE
     @Path("/node/{alias}")
     public void deleteHost(@PathParam("alias") String alias);
+	
+	@POST
+    @Path("/message")
+    @Consumes(MediaType.APPLICATION_JSON)
+	public int sendMessage(ForeignMessage foreignMessage);
 }

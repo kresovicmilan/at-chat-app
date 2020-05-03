@@ -2,6 +2,8 @@ package DTO;
 
 import java.io.Serializable;
 
+import models.ForeignMessage;
+
 public class MessageDTO implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
@@ -25,6 +27,14 @@ public class MessageDTO implements Serializable {
 		this.messageContent = content;
 		this.messageTitle = messageTitle;
 		this.dateSent = dateSent;
+	}
+	
+	public MessageDTO(ForeignMessage foreignMessage) {
+		this.senderUsername = foreignMessage.getSenderUsername();
+		this.recieverUsername = foreignMessage.getRecieverUsername();
+		this.messageContent = foreignMessage.getMessageContent();
+		this.messageTitle = foreignMessage.getMessageTitle();
+		this.dateSent = foreignMessage.getDateSent();
 	}
 	
 	public String getSenderUsername() {

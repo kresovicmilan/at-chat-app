@@ -21,10 +21,12 @@ import javax.ws.rs.PathParam;
 import com.google.gson.Gson;
 
 import DTO.HandshakeDTO;
+import DTO.MessageDTO;
 import beans.HostManagerBean;
 import beans.StorageBean;
 import implementation.RestHostBuilder;
 import model.SocketMessage;
+import models.ForeignMessage;
 import models.Host;
 import models.UpdatePackage;
 import models.User;
@@ -163,6 +165,8 @@ public class HostService implements HostServiceRemote {
 			
 			updateUsersInSocket();
 			
+			purgeMessages(alias);
+			
 			if (hostManagerBean.getCurrentSlaveHost().getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress())) {
 	    		for (Host h: hostManagerBean.getHosts().values()) {
 	    			if (!h.getIpAddress().equals(hostManagerBean.getMasterHost().getIpAddress())) {
@@ -174,15 +178,28 @@ public class HostService implements HostServiceRemote {
 	    	}
 		}
     }
-
-    /*@DELETE
-    @Path("/node/{alias}")
-    public Response removeNode(@PathParam("alias") String alias) {
-    	hostManagerBean.getHosts().remove(alias);
-        return Response.status(200).entity("Host is registered").build();
+    
+    @Override
+    public int sendMessage(ForeignMessage foreignMessage) {
+    	System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Recieved message from host {" + foreignMessage.getIpSendingHost() + "}");
+    	User receivingUser = storageBean.getUsers().get(foreignMessage.getRecieverUsername());
+    	if (receivingUser != null) {
+    		receivingUser.getReceivedForeignMessages().add(foreignMessage);
+    		System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Received message added to model");
+    		
+    		MessageDTO messageDTO = new MessageDTO(foreignMessage);
+    		String jsonMessageDTO = new Gson().toJson(messageDTO);
+			ws.echoTextMessage(jsonMessageDTO);
+			System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Received message sent to sockets");
+			return 1;
+    	} else {
+    		System.out.println("[ERROR] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] User " + foreignMessage.getRecieverUsername() + " doesn't exist");
+    		System.out.println("[ERROR] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Message is not sent");
+    		return 0;
+    	}
     }
 
-    @GET
+    /*@GET
     @Path("/node")
     public String heartbeat() {
         System.out.println("PERIODICNO PROVERAVAJ DA LI SU SVI CVOROVI AKTIVNI");
@@ -220,5 +237,23 @@ public class HostService implements HostServiceRemote {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    }
+    
+    public void purgeMessages(String hostIp) {
+    	System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Purging messages of deleted host {" + hostIp + "}");
+    	for(User u: storageBean.getUsers().values()) {
+    		for (ForeignMessage received: u.getReceivedForeignMessages()) {
+    			if (received.getIpSendingHost().equals(hostIp)) {
+    				u.getReceivedForeignMessages().remove(received);
+    			}
+    		}
+    		
+    		for (ForeignMessage sent: u.getSentForeignMessages()) {
+    			if (sent.getIpReceivingHost().equals(hostIp)) {
+    				u.getSentForeignMessages().remove(sent);
+    			}
+    		}
+    	}
+    	System.out.println("[INFO] [" + hostManagerBean.getCurrentSlaveHost().getIpAddress() + "] Messages purged");
     }
 }

@@ -7,6 +7,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 
 import DTO.HandshakeDTO;
+import models.ForeignMessage;
 import models.Host;
 import models.UpdatePackage;
 
@@ -51,5 +52,13 @@ public class RestHostBuilder {
 		ResteasyWebTarget target = client.target("http://" + receiver.getIpAddress() + "/WAR2020/rest/host");
 		RestAPI rest = target.proxy(RestAPI.class);
 		rest.deleteHost(deletedHost.getAlias());
+	}
+	
+	public static int sendMessageBuilder(ForeignMessage foreignMessage) {
+		ResteasyClient client = new ResteasyClientBuilder().build();
+		ResteasyWebTarget target = client.target("http://" + foreignMessage.getIpReceivingHost() + "/WAR2020/rest/host");
+		RestAPI rest = target.proxy(RestAPI.class);
+		int succ = rest.sendMessage(foreignMessage);
+		return succ;
 	}
 }
