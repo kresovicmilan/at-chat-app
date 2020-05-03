@@ -38,6 +38,7 @@ $(document).ready(function() {
             error: function(err) {
             	console.log(err);
             	if (err !== "User credentials are incorrect") {
+            		console.log(err);
 	            	$.ajax({
 						url: "http://" + err + "WAR2020/rest/chat/users/login/",
 						type: "POST",
