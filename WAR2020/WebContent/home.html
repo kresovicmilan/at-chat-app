@@ -20,7 +20,14 @@
 
 <script>
 let socket;
-let host = "ws://localhost:8080/WAR2020/ws";
+let hostSocket = "";
+if (sessionStorage.getItem('host') === "") {
+	hostSocket = "ws://192.168.0.14:8080/WAR2020/ws";
+} else {
+	hostSocket = "ws://" + sessionStorage.getItem('hostIp') + "ws";
+}
+console.log(hostSocket);
+let host = sessionStorage.getItem('host');
 let username = '';
 let sessionId = '';
 
@@ -29,25 +36,27 @@ window.onload = function() {
     if (username !== "" && username !== undefined) {
 	    var pLoggedInAs = document.getElementById('loggedInAs');
 		pLoggedInAs.innerHTML = 'Logged in as <b>' + username + '</b>.';
+
 		$.ajax({
-		url: "rest/chat/users/registered",
-		type: "GET",
-		success: function(data) {
-			var selectUsers = document.getElementById('select-users');
-			var opt = document.createElement('option');
-			opt.value = "All users";
-			opt.innerHTML = "All users";
-			selectUsers.appendChild(opt);
-
-			for (usrname of data) {
+			url: host + "rest/chat/users/loggedIn",
+			type: "GET",
+			success: function(data) {
+				var selectUsers = document.getElementById('select-users');
+				selectUsers.innerHTML = "";
 				var opt = document.createElement('option');
-				opt.value = usrname;
-			    opt.innerHTML = usrname;
-			    selectUsers.appendChild(opt);
-			}
+				opt.value = "All users";
+				opt.innerHTML = "All users";
+				selectUsers.appendChild(opt);
+				
+				for (usrname of data) {
+					var opt = document.createElement('option');
+					opt.value = usrname;
+				    opt.innerHTML = usrname;
+				    selectUsers.appendChild(opt);
+				}
 
-			$('.selectpicker').selectpicker('refresh');
-        }
+				$('.selectpicker').selectpicker('refresh');
+            }
 		});
 	} else {
 		window.location.href='./index.html';
@@ -59,11 +68,13 @@ $(document).ready(function() {
 	$("#logout-link").click(function() {
 		if (username !== "" && username !== undefined) {
 			$.ajax({
-				url: "rest/chat/users/loggedIn/" + username,
+				url: host + "rest/chat/users/loggedIn/" + username,
 				type: "DELETE",
 				data: "",
 				complete: function(data) {
 					sessionStorage.setItem('username', "");
+					sessionStorage.setItem('host', "");
+                	sessionStorage.setItem('hostIp', "");
 	                alert("User logged out");
 	                window.location.href='./index.html';
 	            }
@@ -75,7 +86,7 @@ $(document).ready(function() {
 
 	$("#users-tab").click(function() {
 		$.ajax({
-			url: "rest/chat/users/registered",
+			url: host + "rest/chat/users/registered",
 			type: "GET",
 			success: function(data) {
 				let i = 1;
@@ -87,7 +98,7 @@ $(document).ready(function() {
 				}
 
 				$.ajax({
-					url: "rest/chat/users/loggedIn",
+					url: host + "rest/chat/users/loggedIn",
 					type: "GET",
 					success: function(data) {
 						let i = 1;
@@ -114,7 +125,7 @@ $(document).ready(function() {
 		document.getElementById('message-content').value = "";
 
 		$.ajax({
-			url: "rest/chat/users/registered",
+			url: host + "rest/chat/users/loggedIn",
 			type: "GET",
 			success: function(data) {
 				var selectUsers = document.getElementById('select-users');
@@ -163,35 +174,39 @@ $(document).ready(function() {
 
 		if (receiverUsername === "All users") {
 			$.ajax({
-			url: "rest/chat/messages/all",
+			url: host + "rest/chat/messages/all",
 			type: "POST",
 			data: JSON.stringify({"senderUsername":username, "recieverUsername": "all", "messageContent":messageContent, "messageTitle": messageTitle}),
 			contentType: "application/json",
 			success: function(data) {
                 var div = document.getElementById('showMessage');
 				div.innerHTML = '<div class="alert alert-success" role="alert"><b>Success:</b> Message is sent</div>';
+				$('.selectpicker').selectpicker('refresh');
 				return;
             },
             error: function(err) {
                 var div = document.getElementById('showMessage');
 				div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Message is not sent</div>';
+				$('.selectpicker').selectpicker('refresh');
 				return;
             }
 			});
 		} else {
 			$.ajax({
-				url: "rest/chat/messages/user",
+				url: host + "rest/chat/messages/user",
 				type: "POST",
 				data: JSON.stringify({"senderUsername":username, "recieverUsername": receiverUsername, "messageContent":messageContent, "messageTitle": messageTitle}),
 				contentType: "application/json",
 				success: function(data) {
 	            	var div = document.getElementById('showMessage');
 					div.innerHTML = '<div class="alert alert-success" role="alert"><b>Success:</b> Message is sent</div>';
+					$('.selectpicker').selectpicker('refresh');
 					return;
 	            },
 	            error: function(err) {
 	                var div = document.getElementById('showMessage');
 					div.innerHTML = '<div class="alert alert-danger" role="alert"><b>Error:</b> Message is not sent</div>';
+					$('.selectpicker').selectpicker('refresh');
 					return;
 	            }
 			});
@@ -204,7 +219,7 @@ $(document).ready(function() {
 
 	$("#inbox-tab").click(function() {
 		$.ajax({
-			url: "rest/chat/messages/" + username,
+			url: host + "rest/chat/messages/" + username,
 			type: "GET",
 			success: function(data) {
 				var divRecievedMessages = document.getElementById('recievedMessages');
@@ -226,7 +241,7 @@ $(document).ready(function() {
 	});
 	
 	try {
-		socket = new WebSocket(host + "/" + sessionStorage.getItem('username'));
+		socket = new WebSocket(hostSocket + "/" + sessionStorage.getItem('username'));
 	
 		console.log('connect: Socket Status: ' + socket.readyState);
 		
@@ -256,6 +271,22 @@ $(document).ready(function() {
 						divLoggedinList.innerHTML += '<tr><center><th scope="row" class="col-4">' + i + '</th><td class="col-8">'+ u +'</td></center></tr>';
 						i += 1;
 					}
+
+					var selectUsers = document.getElementById('select-users');
+					selectUsers.innerHTML = "";
+					var opt = document.createElement('option');
+					opt.value = "All users";
+					opt.innerHTML = "All users";
+					selectUsers.appendChild(opt);
+
+					for (usrname of msg) {
+						var opt = document.createElement('option');
+						opt.value = usrname;
+					    opt.innerHTML = usrname;
+					    selectUsers.appendChild(opt);
+					}
+
+					$('.selectpicker').selectpicker('refresh');
 					break;
 				case "message":
 					var divInboxMessage = document.getElementById('inbox-message');
@@ -268,6 +299,8 @@ $(document).ready(function() {
 		
 		socket.onclose = function() {
 			sessionStorage.setItem('username', '');
+			sessionStorage.setItem('host', "");
+            sessionStorage.setItem('hostIp', "");
 			socket = null;
 		}
 		

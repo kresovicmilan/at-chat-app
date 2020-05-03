@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ejb.EJB;
 import javax.ejb.LocalBean;
 import javax.ejb.Singleton;
 import javax.websocket.OnClose;
@@ -22,6 +23,7 @@ import javax.websocket.server.ServerEndpoint;
 import com.google.gson.Gson;
 
 import DTO.MessageDTO;
+import beans.HostManagerBean;
 import model.SocketMessage;
 
 
@@ -33,6 +35,9 @@ public class WSEndPoint {
     static List<Session> sessions = new ArrayList<Session>();
     static Map<String, List<Session>> userSessions = new HashMap<>();
     Set<String> registeredUsers = new HashSet<String>();
+    
+    @EJB
+    HostManagerBean hostManagerBean;
 
     @OnOpen
     public void onOpen(@PathParam("username") String username, Session session) {
@@ -44,7 +49,11 @@ public class WSEndPoint {
     			userSessions.put(username, userListSessions);
     			
     			List<String> usernames = new ArrayList<>(userSessions.keySet());
-    			SocketMessage message = new SocketMessage("logged", new Date(), new Gson().toJson(usernames));
+    			for (List<String> listOfForeignLoggedInUsers: hostManagerBean.getForeignLoggedUsers().values()) {
+    	    		usernames.addAll(listOfForeignLoggedInUsers);
+    	    	}
+    			List<String> jsonListUnique = conversionUnique(usernames);
+    			SocketMessage message = new SocketMessage("logged", new Date(), new Gson().toJson(jsonListUnique));
     			String jsonMessage = new Gson().toJson(message);
     			try {
 	    			for (Session s: sessions) {
@@ -58,6 +67,10 @@ public class WSEndPoint {
     			registeredUsers.add(username);
     			
     			usernames = new ArrayList<>(registeredUsers);
+    			for (Set<String> setOfForeignRegisteredUsers: hostManagerBean.getForeignRegisteredUsers().values()) {
+    	    		usernames.addAll(new ArrayList<String>(setOfForeignRegisteredUsers));
+    	    	}
+    			jsonListUnique = conversionUnique(usernames);
     			message = new SocketMessage("registered", new Date(), new Gson().toJson(usernames));
     			jsonMessage = new Gson().toJson(message);
     			try {
@@ -71,6 +84,7 @@ public class WSEndPoint {
     		} else {
     			userSessions.get(username).add(session);
     		}
+    		
             //sessions.add(session);
         }
     }
@@ -114,6 +128,9 @@ public class WSEndPoint {
 	        }
 	        
 	        List<String> usernames = new ArrayList<>(userSessions.keySet());
+	        for (List<String> listOfForeignLoggedInUsers: hostManagerBean.getForeignLoggedUsers().values()) {
+	    		usernames.addAll(listOfForeignLoggedInUsers);
+	    	}
 			SocketMessage message = new SocketMessage("logged", new Date(), new Gson().toJson(usernames));
 			String jsonMessage = new Gson().toJson(message);
 			try {
@@ -142,6 +159,9 @@ public class WSEndPoint {
         }
         
         List<String> usernames = new ArrayList<>(userSessions.keySet());
+        for (List<String> listOfForeignLoggedInUsers: hostManagerBean.getForeignLoggedUsers().values()) {
+    		usernames.addAll(listOfForeignLoggedInUsers);
+    	}
 		SocketMessage message = new SocketMessage("logged", new Date(), new Gson().toJson(usernames));
 		String jsonMessage = new Gson().toJson(message);
 		try {
@@ -153,6 +173,12 @@ public class WSEndPoint {
 			e.printStackTrace();
 		}
     }
+    
+    public List<String> conversionUnique(List<String> list) {
+    	Set<String> set = new HashSet<>(list);
+    	List<String> unique = new ArrayList<>(set);
+    	return unique;
+    }
 
 	public static Map<String, List<Session>> getUserSessions() {
 		return userSessions;
@@ -161,5 +187,23 @@ public class WSEndPoint {
 	public static void setUserSessions(Map<String, List<Session>> userSessions) {
 		WSEndPoint.userSessions = userSessions;
 	}
+
+	public static List<Session> getSessions() {
+		return sessions;
+	}
+
+	public static void setSessions(List<Session> sessions) {
+		WSEndPoint.sessions = sessions;
+	}
+
+	public Set<String> getRegisteredUsers() {
+		return registeredUsers;
+	}
+
+	public void setRegisteredUsers(Set<String> registeredUsers) {
+		this.registeredUsers = registeredUsers;
+	}
+	
+	
 
 }
